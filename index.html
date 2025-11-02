@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Crispy Chicken Sales Dashboard - Data Analysis</title>
+  <title>Crispy Chicken Sales Dashboard</title>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- SheetJS for Excel processing -->
@@ -12,12 +12,6 @@
   <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
   <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- jsPDF for PDF export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <!-- DataTables -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <style>
     :root {
       --primary: #e63946;
@@ -29,8 +23,60 @@
       --danger: #f4a261;
       --card-bg: #ffffff;
       --border: #dee2e6;
-      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --text: #333;
+      --bg: #f8f9fa;
     }
+    
+    /* Dark mode styles */
+    body.dark-mode {
+      --card-bg: #2d3748;
+      --border: #4a5568;
+      --text: #e2e8f0;
+      --bg: #1a202c;
+    }
+    
+    body.dark-mode .card,
+    body.dark-mode .tab-content,
+    body.dark-mode .data-management,
+    body.dark-mode .filters {
+      background: var(--card-bg);
+      color: var(--text);
+    }
+    
+    body.dark-mode .analysis-table th,
+    body.dark-mode .analysis-table td {
+      border-color: var(--border);
+    }
+    
+    body.dark-mode .tabs {
+      border-bottom-color: var(--border);
+    }
+    
+    body.dark-mode .tab {
+      color: #cbd5e0;
+    }
+    
+    body.dark-mode .tab.active {
+      color: var(--primary);
+    }
+    
+    body.dark-mode .upload-area {
+      background: #374151;
+      border-color: #4a5568;
+    }
+    
+    body.dark-mode .upload-area:hover,
+    body.dark-mode .upload-area.dragover {
+      background: #4a5568;
+    }
+    
+    body.dark-mode .filter-group select,
+    body.dark-mode .filter-group input {
+      background: #374151;
+      color: var(--text);
+      border-color: var(--border);
+    }
+    
     * {
       box-sizing: border-box;
       margin: 0;
@@ -38,9 +84,10 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     body {
-      background-color: #f8f9fa;
-      color: #333;
+      background-color: var(--bg);
+      color: var(--text);
       line-height: 1.6;
+      transition: background-color 0.3s, color 0.3s;
     }
     .container {
       max-width: 1400px;
@@ -51,109 +98,29 @@
       text-align: center;
       margin-bottom: 30px;
       color: var(--secondary);
-      position: relative;
-      padding-bottom: 15px;
-      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
     }
     h1 {
       font-size: 2.2rem;
       margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
     }
     .subtitle {
       color: #666;
       font-size: 1rem;
     }
-
-    /* Navigation Tabs */
-    .nav-tabs {
+    
+    /* Controls */
+    .controls {
       display: flex;
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 8px;
-      margin-bottom: 25px;
-      box-shadow: var(--shadow);
-      gap: 5px;
-    }
-    .nav-tab {
-      flex: 1;
-      padding: 12px 20px;
-      text-align: center;
-      cursor: pointer;
-      border-radius: 8px;
-      font-weight: 600;
-      color: #666;
-      transition: all 0.3s ease;
-      display: flex;
+      gap: 10px;
       align-items: center;
-      justify-content: center;
-      gap: 8px;
     }
-    .nav-tab.active {
-      background: var(--primary);
-      color: white;
-    }
-    .nav-tab:hover:not(.active) {
-      background: rgba(29, 53, 87, 0.1);
-    }
-
-    /* Tab Content */
-    .tab-content {
-      display: none;
-    }
-    .tab-content.active {
-      display: block;
-    }
-
-    /* Data Management Section */
-    .data-management {
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 25px;
-      margin-bottom: 25px;
-      box-shadow: var(--shadow);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 20px;
-    }
-    .upload-area {
-      flex: 1;
-      min-width: 280px;
-      border: 3px dashed var(--border);
-      border-radius: 12px;
-      padding: 30px;
-      text-align: center;
-      transition: all 0.3s ease;
-      cursor: pointer;
-      background: #f9f9f9;
-    }
-    .upload-area:hover, .upload-area.dragover {
-      border-color: var(--primary);
-      background-color: #fdf2f3;
-      transform: translateY(-2px);
-    }
-    .upload-area i {
-      font-size: 3rem;
-      color: var(--primary);
-      margin-bottom: 15px;
-    }
-    .upload-text {
-      font-weight: 600;
-      color: var(--secondary);
-      font-size: 1.1rem;
-    }
-    .upload-subtext {
-      font-size: 0.9rem;
-      color: #888;
-      margin-top: 8px;
-    }
+    
     .btn {
-      padding: 12px 22px;
+      padding: 10px 18px;
       border: none;
       border-radius: 8px;
       font-weight: 600;
@@ -162,17 +129,14 @@
       text-decoration: none;
       display: inline-block;
       text-align: center;
-      font-size: 1rem;
     }
     .btn-primary {
       background: var(--primary);
       color: white;
-      box-shadow: 0 2px 4px rgba(230, 57, 70, 0.3);
     }
     .btn-primary:hover {
       background: #d62839;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(230, 57, 70, 0.4);
+      transform: translateY(-1px);
     }
     .btn-secondary {
       background: var(--light);
@@ -181,19 +145,101 @@
     }
     .btn-secondary:hover {
       background: #e6f0e9;
-      transform: translateY(-1px);
+    }
+    .btn-icon {
+      padding: 8px;
+      background: transparent;
+      color: var(--secondary);
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-icon:hover {
+      background: rgba(0,0,0,0.1);
+    }
+    .dark-mode-toggle {
+      position: relative;
+      width: 50px;
+      height: 24px;
+      background: #ccc;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .dark-mode-toggle.active {
+      background: var(--primary);
+    }
+    .dark-mode-toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+    .dark-mode-toggle.active::after {
+      transform: translateX(26px);
+    }
+
+    /* Data Management Section */
+    .data-management {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .upload-area {
+      flex: 1;
+      min-width: 280px;
+      border: 2.5px dashed var(--border);
+      border-radius: 10px;
+      padding: 25px;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .upload-area:hover, .upload-area.dragover {
+      border-color: var(--primary);
+      background-color: #fdf2f3;
+    }
+    .upload-area i {
+      font-size: 2.5rem;
+      color: var(--primary);
+      margin-bottom: 10px;
+    }
+    .upload-text {
+      font-weight: 600;
+      color: var(--secondary);
+    }
+    .upload-subtext {
+      font-size: 0.85rem;
+      color: #888;
+      margin-top: 5px;
     }
 
     /* Filters */
     .filters {
       background: var(--card-bg);
       border-radius: 12px;
-      padding: 25px;
+      padding: 20px;
       margin-bottom: 25px;
-      box-shadow: var(--shadow);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
     }
     .filter-group {
       display: flex;
@@ -201,180 +247,121 @@
     }
     .filter-group label {
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       color: var(--secondary);
-      font-size: 0.95rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      font-size: 0.9rem;
     }
     .filter-group select,
     .filter-group input {
-      padding: 12px;
+      padding: 10px;
       border: 1px solid var(--border);
       border-radius: 8px;
-      font-size: 1rem;
+      font-size: 0.95rem;
       background: white;
-      transition: border-color 0.2s;
     }
-    .filter-group select:focus,
-    .filter-group input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.1);
+    body.dark-mode .filter-group select,
+    body.dark-mode .filter-group input {
+      background: #374151;
+      color: var(--text);
     }
-
-    /* Data Table Section */
-    .data-table-section {
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 25px;
-      margin-bottom: 25px;
-      box-shadow: var(--shadow);
-    }
-    .table-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-      gap: 15px;
-    }
-    .table-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--secondary);
-    }
-    .table-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .btn-icon {
-      padding: 10px 15px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: white;
-      color: var(--secondary);
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.9rem;
-    }
-    .btn-icon:hover {
-      background: var(--light);
-      border-color: var(--primary);
-      color: var(--primary);
-    }
-
-    /* DataTable Customization */
-    .dataTables_wrapper {
-      padding: 0;
-    }
-    .dataTables_filter input {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 8px 12px;
-      margin-left: 10px;
-    }
-    .dataTables_filter input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.1);
-    }
-    .dataTables_length select {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 5px 10px;
-      margin: 0 10px;
-    }
-    .dataTables_paginate .paginate_button {
-      padding: 8px 12px;
-      margin: 0 2px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: white;
-      color: var(--secondary);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .dataTables_paginate .paginate_button:hover {
-      background: var(--light);
-      border-color: var(--primary);
-      color: var(--primary);
-    }
-    .dataTables_paginate .paginate_button.current {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
+    .filter-group input[type="date"] {
+      font-family: inherit;
     }
 
     /* Summary Cards */
     .summary-cards {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
       margin-bottom: 30px;
     }
     .card {
       background: var(--card-bg);
       border-radius: 12px;
-      padding: 25px;
-      box-shadow: var(--shadow);
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      transition: transform 0.2s;
     }
     .card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-    }
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 5px;
-      height: 100%;
-      background: var(--primary);
+      transform: translateY(-3px);
     }
     .card-title {
       font-size: 0.9rem;
       color: #666;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
     .card-value {
-      font-size: 2rem;
+      font-size: 1.8rem;
       font-weight: 700;
       color: var(--secondary);
-      margin-bottom: 8px;
     }
     .card-subtitle {
       font-size: 0.85rem;
       color: #888;
-      margin-top: 5px;
-    }
-    .card-icon {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      font-size: 2.5rem;
-      opacity: 0.1;
-      color: var(--primary);
+      margin-top: 4px;
     }
 
-    /* Chart Container */
+    /* Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 12px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #666;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    .tab:hover:not(.active) {
+      color: var(--secondary);
+    }
+
+    /* Tab Content */
+    .tab-content {
+      display: none;
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .tab-content.active {
+      display: block;
+    }
     .chart-container {
       position: relative;
-      height: 400px;
-      margin-bottom: 25px;
+      height: 380px;
+      margin-bottom: 20px;
+    }
+    .analysis-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 0.9rem;
+    }
+    .analysis-table th {
+      background: #f4f6f8;
+      text-align: left;
+      padding: 12px;
+      font-weight: 600;
+      color: var(--secondary);
+      border-bottom: 2px solid var(--border);
+    }
+    .analysis-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .analysis-table tr:hover {
+      background: #f8f9fa;
     }
 
     /* Grid for Sections */
@@ -402,24 +389,25 @@
       .summary-cards {
         grid-template-columns: 1fr;
       }
-      .nav-tabs {
-        flex-direction: column;
+      .tabs {
+        justify-content: center;
       }
-      .chart-container {
-        height: 300px;
+      header {
+        flex-direction: column;
+        text-align: center;
+      }
+      .controls {
+        justify-content: center;
+        margin-top: 15px;
       }
     }
 
     /* Loading & Error */
     .loading, .error {
       text-align: center;
-      padding: 25px;
-      border-radius: 12px;
-      margin: 20px 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 15px 0;
     }
     .loading {
       background: #e3f2fd;
@@ -440,484 +428,305 @@
       border-top: 1px solid var(--border);
     }
 
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
+    /* Export dropdown */
+    .export-dropdown {
+      position: relative;
+      display: inline-block;
     }
-    ::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #888;
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #555;
-    }
-
-    /* Data Export */
-    .export-section {
+    .export-menu {
+      display: none;
+      position: absolute;
+      right: 0;
       background: var(--card-bg);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 25px;
-      box-shadow: var(--shadow);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 15px;
-    }
-    .export-options {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .btn-export {
-      padding: 10px 16px;
+      min-width: 160px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      z-index: 1;
+      border-radius: 8px;
       border: 1px solid var(--border);
-      border-radius: 8px;
-      background: white;
-      color: var(--secondary);
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
-    .btn-export:hover {
-      background: var(--light);
-      border-color: var(--primary);
-      color: var(--primary);
+    .export-menu.show {
+      display: block;
     }
-
-    /* Data Stats */
-    .data-stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin-bottom: 25px;
+    .export-menu a {
+      color: var(--text);
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+      transition: background 0.3s;
     }
-    .stat-card {
-      background: linear-gradient(135deg, var(--primary), #d62839);
-      color: white;
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-      box-shadow: var(--shadow);
-      transition: transform 0.3s ease;
+    .export-menu a:hover {
+      background: #f1f1f1;
     }
-    .stat-card:hover {
-      transform: translateY(-5px);
-    }
-    .stat-title {
-      font-size: 0.9rem;
-      opacity: 0.9;
-      margin-bottom: 10px;
-    }
-    .stat-value {
-      font-size: 2rem;
-      font-weight: 700;
-    }
-
-    /* Analysis Section */
-    .analysis-section {
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 25px;
-      margin-bottom: 25px;
-      box-shadow: var(--shadow);
-    }
-    .analysis-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    .analysis-title {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: var(--secondary);
-    }
-    .analysis-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-    }
-    .analysis-item {
-      padding: 15px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      border-left: 4px solid var(--primary);
-    }
-    .analysis-label {
-      font-size: 0.9rem;
-      color: #666;
-      margin-bottom: 5px;
-    }
-    .analysis-value {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--secondary);
+    .export-menu i {
+      margin-right: 8px;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1><i class="fas fa-database"></i> Crispy Chicken Data Analysis</h1>
-      <p class="subtitle">Comprehensive data exploration and insights</p>
+      <div>
+        <h1>Crispy Chicken Sales Dashboard</h1>
+        <p class="subtitle">Real-time insights into sales, delivery, and payment performance</p>
+      </div>
+      <div class="controls">
+        <button class="btn btn-secondary" id="refreshBtn">
+          <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+        <div class="export-dropdown">
+          <button class="btn btn-secondary" id="exportBtn">
+            <i class="fas fa-download"></i> Export
+          </button>
+          <div class="export-menu" id="exportMenu">
+            <a href="#" id="exportPDF"><i class="fas fa-file-pdf"></i> Export PDF</a>
+            <a href="#" id="exportExcel"><i class="fas fa-file-excel"></i> Export Excel</a>
+          </div>
+        </div>
+        <div class="dark-mode-toggle" id="darkModeToggle"></div>
+      </div>
     </header>
 
-    <!-- Navigation Tabs -->
-    <div class="nav-tabs">
-      <div class="nav-tab active" data-tab="overview">
-        <i class="fas fa-chart-pie"></i> Overview
-      </div>
-      <div class="nav-tab" data-tab="raw-data">
-        <i class="fas fa-table"></i> Raw Data
-      </div>
-      <div class="nav-tab" data-tab="analysis">
-        <i class="fas fa-analytics"></i> Analysis
-      </div>
-      <div class="nav-tab" data-tab="reports">
-        <i class="fas fa-file-alt"></i> Reports
-      </div>
-    </div>
-
-    <!-- Overview Tab -->
-    <div class="tab-content active" id="overview">
-      <!-- Data Management -->
-      <div class="data-management">
-        <div class="upload-area" id="dropArea">
-          <i class="fas fa-cloud-upload-alt"></i>
-          <div class="upload-text">Drop Excel file here or click to upload</div>
-          <p class="upload-subtext">Supports .xlsx, .xls, .csv files up to 10MB</p>
-          <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" hidden />
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <a href="#" class="btn btn-secondary" id="downloadTemplate">
-            <i class="fas fa-download"></i> Download Template
-          </a>
-          <a href="#" class="btn btn-secondary" id="loadSampleData">
-            <i class="fas fa-database"></i> Load Sample Data
-          </a>
-        </div>
-      </div>
-
-      <!-- Export Section -->
-      <div class="export-section">
+    <!-- Data Management -->
+    <div class="data-management">
+      <div class="upload-area" id="dropArea">
         <div>
-          <h3 style="margin-bottom: 5px; color: var(--secondary);">Data Export</h3>
-          <p style="color: #666; font-size: 0.9rem;">Export your analysis results</p>
-        </div>
-        <div class="export-options">
-          <button class="btn-export" id="exportPDF">
-            <i class="fas fa-file-pdf"></i> Export PDF
-          </button>
-          <button class="btn-export" id="exportCSV">
-            <i class="fas fa-file-csv"></i> Export CSV
-          </button>
-          <button class="btn-export" id="exportExcel">
-            <i class="fas fa-file-excel"></i> Export Excel
-          </button>
+          <div class="upload-text">Drop Excel file here or click to upload</div>
+          <p class="upload-subtext">Supports .xlsx files up to 10MB</p>
+          <input type="file" id="fileInput" accept=".xlsx" hidden />
         </div>
       </div>
+      <div>
+        <a href="#" class="btn btn-secondary" id="downloadTemplate">
+          <i class="fas fa-file-download"></i> Download Template
+        </a>
+        <button class="btn btn-secondary" id="clearFilters" style="margin-left: 10px;">
+          <i class="fas fa-eraser"></i> Clear Filters
+        </button>
+      </div>
+    </div>
 
-      <!-- Filters -->
-      <div class="filters">
-        <div class="filter-group">
-          <label for="filterMonth"><i class="fas fa-calendar-alt"></i> Month</label>
-          <select id="filterMonth">
-            <option value="">All Months</option>
-          </select>
-        </div>
-        <div class="filter-group">
-          <label for="filterYear"><i class="fas fa-calendar"></i> Year</label>
-          <select id="filterYear">
-            <option value="">All Years</option>
-          </select>
-        </div>
-        <div class="filter-group">
-          <label for="filterBranch"><i class="fas fa-store"></i> Branch</label>
-          <select id="filterBranch">
-            <option value="">All Branches</option>
-          </select>
-        </div>
-        <div class="filter-group">
-          <label for="filterPayment"><i class="fas fa-credit-card"></i> Payment Method</label>
-          <select id="filterPayment">
-            <option value="">All Methods</option>
-            <option value="cash">Cash</option>
-            <option value="card">Card</option>
-            <option value="online">Online</option>
-          </select>
-        </div>
-        <div class="filter-group" style="align-self: end;">
-          <button class="btn btn-primary" id="applyFilters">
-            <i class="fas fa-filter"></i> Apply Filters
-          </button>
-        </div>
+    <!-- Filters -->
+    <div class="filters">
+      <div class="filter-group">
+        <label for="filterMonth">Month</label>
+        <select id="filterMonth">
+          <option value="">All Months</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="filterYear">Year</label>
+        <select id="filterYear">
+          <option value="">All Years</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="filterBranch">Branch</label>
+        <select id="filterBranch">
+          <option value="">All Branches</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="filterDateFrom">Date From</label>
+        <input type="date" id="filterDateFrom" />
+      </div>
+      <div class="filter-group">
+        <label for="filterDateTo">Date To</label>
+        <input type="date" id="filterDateTo" />
+      </div>
+      <div class="filter-group" style="align-self: end;">
+        <button class="btn btn-primary" id="applyFilters">
+          <i class="fas fa-filter"></i> Apply Filters
+        </button>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="card">
+        <div class="card-title">Total Receipts</div>
+        <div class="card-value" id="totalReceipts">AED 0</div>
+        <div class="card-subtitle">All filtered data</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Total Delivery</div>
+        <div class="card-value" id="totalDelivery">AED 0</div>
+        <div class="card-subtitle">Internal delivery</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Total Online</div>
+        <div class="card-value" id="totalOnline">AED 0</div>
+        <div class="card-subtitle">ONLINE CASH + CARD</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Total Platforms</div>
+        <div class="card-value" id="totalPlatforms">AED 0</div>
+        <div class="card-subtitle">Third-party platforms</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Card Payments</div>
+        <div class="card-value" id="cardPercentage">0%</div>
+        <div class="card-subtitle">of total receipts</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Cash Payments</div>
+        <div class="card-value" id="cashPercentage">0%</div>
+        <div class="card-subtitle">of total receipts</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Total Transactions</div>
+        <div class="card-value" id="totalTransactions">0</div>
+        <div class="card-subtitle">Count of all receipts</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Avg Transaction Value</div>
+        <div class="card-value" id="avgTransaction">AED 0</div>
+        <div class="card-subtitle">Total / Transactions</div>
+      </div>
+    </div>
+
+    <!-- Payment Method Analysis -->
+    <div class="section">
+      <h2 style="margin-bottom: 15px; color: var(--secondary);">Payment Method Analysis</h2>
+      <div class="tabs">
+        <div class="tab active" data-tab="visa-master">Visa vs Mastercard</div>
+        <div class="tab" data-tab="cash-card">Cash vs Card</div>
+        <div class="tab" data-tab="platform-perf">Platform Performance</div>
       </div>
 
-      <!-- Data Statistics -->
-      <div class="data-stats">
-        <div class="stat-card">
-          <div class="stat-title">Total Records</div>
-          <div class="stat-value" id="totalRecords">0</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-title">Total Sales</div>
-          <div class="stat-value" id="totalSales">AED 0</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-title">Total Orders</div>
-          <div class="stat-value" id="totalOrders">0</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-title">Active Branches</div>
-          <div class="stat-value" id="activeBranches">0</div>
-        </div>
-      </div>
-
-      <!-- Summary Cards -->
-      <div class="summary-cards">
-        <div class="card">
-          <i class="fas fa-receipt card-icon"></i>
-          <div class="card-title">Total Receipts</div>
-          <div class="card-value" id="totalReceipts">AED 0</div>
-          <div class="card-subtitle">All filtered data</div>
-        </div>
-        <div class="card">
-          <i class="fas fa-truck card-icon"></i>
-          <div class="card-title">Total Delivery</div>
-          <div class="card-value" id="totalDelivery">AED 0</div>
-          <div class="card-subtitle">Internal delivery</div>
-        </div>
-        <div class="card">
-          <i class="fas fa-globe card-icon"></i>
-          <div class="card-title">Total Online</div>
-          <div class="card-value" id="totalOnline">AED 0</div>
-          <div class="card-subtitle">ONLINE CASH + CARD</div>
-        </div>
-        <div class="card">
-          <i class="fas fa-utensils card-icon"></i>
-          <div class="card-title">Total Platforms</div>
-          <div class="card-value" id="totalPlatforms">AED 0</div>
-          <div class="card-subtitle">Third-party platforms</div>
-        </div>
-        <div class="card">
-          <i class="fas fa-credit-card card-icon"></i>
-          <div class="card-title">Card Payments</div>
-          <div class="card-value" id="cardPercentage">0%</div>
-          <div class="card-subtitle">of total receipts</div>
-        </div>
-        <div class="card">
-          <i class="fas fa-money-bill-wave card-icon"></i>
-          <div class="card-title">Cash Payments</div>
-          <div class="card-value" id="cashPercentage">0%</div>
-          <div class="card-subtitle">of total receipts</div>
-        </div>
-      </div>
-
-      <!-- Charts -->
-      <div class="dashboard-grid">
-        <div class="analysis-section">
-          <div class="analysis-header">
-            <h3 class="analysis-title">Sales Trend</h3>
+      <!-- Visa vs Mastercard -->
+      <div class="tab-content active" id="visa-master">
+        <div class="dashboard-grid">
+          <div>
+            <div class="chart-container">
+              <canvas id="visaMasterChart"></canvas>
+            </div>
           </div>
-          <div class="chart-container">
-            <canvas id="salesTrendChart"></canvas>
+          <div>
+            <table class="analysis-table" id="visaMasterTable">
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Total (AED)</th>
+                  <th>Transactions</th>
+                  <th>Avg (AED)</th>
+                  <th>Share</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
-        <div class="analysis-section">
-          <div class="analysis-header">
-            <h3 class="analysis-title">Payment Distribution</h3>
+      </div>
+
+      <!-- Cash vs Card -->
+      <div class="tab-content" id="cash-card">
+        <div class="dashboard-grid">
+          <div>
+            <div class="chart-container">
+              <canvas id="cashCardChart"></canvas>
+            </div>
           </div>
-          <div class="chart-container">
-            <canvas id="paymentDistributionChart"></canvas>
+          <div>
+            <table class="analysis-table" id="cashCardTable">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Total (AED)</th>
+                  <th>Transactions</th>
+                  <th>Percentage</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Platform Performance -->
+      <div class="tab-content" id="platform-perf">
+        <div class="dashboard-grid">
+          <div>
+            <div class="chart-container">
+              <canvas id="platformPieChart"></canvas>
+            </div>
+          </div>
+          <div>
+            <table class="analysis-table" id="platformTable">
+              <thead>
+                <tr>
+                  <th>Platform</th>
+                  <th>Total (AED)</th>
+                  <th>Transactions</th>
+                  <th>Avg (AED)</th>
+                  <th>Share</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Raw Data Tab -->
-    <div class="tab-content" id="raw-data">
-      <div class="data-table-section">
-        <div class="table-header">
-          <h2 class="table-title">Sales Data Table</h2>
-          <div class="table-actions">
-            <button class="btn-icon" id="refreshTable">
-              <i class="fas fa-sync-alt"></i> Refresh
-            </button>
-            <button class="btn-icon" id="addRecord">
-              <i class="fas fa-plus"></i> Add Record
-            </button>
-            <button class="btn-icon" id="deleteSelected">
-              <i class="fas fa-trash"></i> Delete Selected
-            </button>
-          </div>
-        </div>
-        <table id="dataTable" class="display" style="width:100%">
-          <thead>
-            <tr>
-              <th><input type="checkbox" id="selectAll"></th>
-              <th>Branch</th>
-              <th>Month</th>
-              <th>Year</th>
-              <th>Receipts</th>
-              <th>TALABAT</th>
-              <th>Cash</th>
-              <th>Visa Card</th>
-              <th>Master Card</th>
-              <th>Delivery</th>
-              <th>Online</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+    <!-- Delivery Performance -->
+    <div class="section" style="margin-top: 40px;">
+      <h2 style="margin-bottom: 15px; color: var(--secondary);">Delivery Performance</h2>
+      <div class="tabs">
+        <div class="tab active" data-tab="branch-comp">Branch Comparison</div>
+        <div class="tab" data-tab="delivery-types">Delivery Types</div>
+        <div class="tab" data-tab="monthly-trends">Monthly Trends</div>
+        <div class="tab" data-tab="internal-trends">Internal Delivery Trends</div>
       </div>
-    </div>
 
-    <!-- Analysis Tab -->
-    <div class="tab-content" id="analysis">
-      <div class="analysis-section">
-        <div class="analysis-header">
-          <h3 class="analysis-title">Branch Performance Analysis</h3>
+      <!-- Branch Comparison -->
+      <div class="tab-content active" id="branch-comp">
+        <div class="chart-container" style="height: 450px;">
+          <canvas id="branchComparisonChart"></canvas>
         </div>
-        <div class="analysis-grid">
-          <div class="analysis-item">
-            <div class="analysis-label">Top Performing Branch</div>
-            <div class="analysis-value" id="topBranch">-</div>
+      </div>
+
+      <!-- Delivery Types -->
+      <div class="tab-content" id="delivery-types">
+        <div class="dashboard-grid">
+          <div>
+            <div class="chart-container">
+              <canvas id="deliveryTypesChart"></canvas>
+            </div>
           </div>
-          <div class="analysis-item">
-            <div class="analysis-label">Average Order Value</div>
-            <div class="analysis-value" id="avgOrderValue">AED 0</div>
-          </div>
-          <div class="analysis-item">
-            <div class="analysis-label">Peak Sales Month</div>
-            <div class="analysis-value" id="peakMonth">-</div>
-          </div>
-          <div class="analysis-item">
-            <div class="analysis-label">Most Popular Payment</div>
-            <div class="analysis-value" id="popularPayment">-</div>
+          <div>
+            <table class="analysis-table" id="deliveryTypesTable">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Total (AED)</th>
+                  <th>Percentage</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
       </div>
 
-      <div class="dashboard-grid">
-        <div class="analysis-section">
-          <div class="analysis-header">
-            <h3 class="analysis-title">Branch Comparison</h3>
-          </div>
-          <div class="chart-container">
-            <canvas id="branchComparisonChart"></canvas>
-          </div>
-        </div>
-        <div class="analysis-section">
-          <div class="analysis-header">
-            <h3 class="analysis-title">Monthly Performance</h3>
-          </div>
-          <div class="chart-container">
-            <canvas id="monthlyPerformanceChart"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Reports Tab -->
-    <div class="tab-content" id="reports">
-      <div class="analysis-section">
-        <div class="analysis-header">
-          <h3 class="analysis-title">Generate Reports</h3>
-          <button class="btn btn-primary" id="generateReport">
-            <i class="fas fa-file-export"></i> Generate Report
-          </button>
-        </div>
-        <div class="analysis-grid">
-          <div class="analysis-item">
-            <div class="analysis-label">Report Type</div>
-            <select id="reportType" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-              <option value="summary">Summary Report</option>
-              <option value="detailed">Detailed Report</option>
-              <option value="financial">Financial Report</option>
-              <option value="branch">Branch Report</option>
-            </select>
-          </div>
-          <div class="analysis-item">
-            <div class="analysis-label">Date Range</div>
-            <input type="date" id="reportDateFrom" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-          </div>
-          <div class="analysis-item">
-            <div class="analysis-label">To</div>
-            <input type="date" id="reportDateTo" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-          </div>
-          <div class="analysis-item">
-            <div class="analysis-label">Format</div>
-            <select id="reportFormat" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-              <option value="pdf">PDF</option>
-              <option value="excel">Excel</option>
-              <option value="csv">CSV</option>
-            </select>
-          </div>
+      <!-- Monthly Trends -->
+      <div class="tab-content" id="monthly-trends">
+        <div class="chart-container" style="height: 450px;">
+          <canvas id="monthlyTrendsChart"></canvas>
         </div>
       </div>
 
-      <div class="data-table-section">
-        <div class="table-header">
-          <h2 class="table-title">Recent Reports</h2>
+      <!-- Internal Delivery Trends -->
+      <div class="tab-content" id="internal-trends">
+        <div class="chart-container" style="height: 450px;">
+          <canvas id="internalTrendsChart"></canvas>
         </div>
-        <table id="reportsTable" class="display" style="width:100%">
-          <thead>
-            <tr>
-              <th>Report Name</th>
-              <th>Type</th>
-              <th>Generated Date</th>
-              <th>Format</th>
-              <th>Size</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Monthly Sales Report</td>
-              <td>Summary</td>
-              <td>2025-01-15</td>
-              <td>PDF</td>
-              <td>2.3 MB</td>
-              <td>
-                <button class="btn-icon"><i class="fas fa-download"></i></button>
-                <button class="btn-icon"><i class="fas fa-eye"></i></button>
-              </td>
-            </tr>
-            <tr>
-              <td>Branch Performance</td>
-              <td>Detailed</td>
-              <td>2025-01-14</td>
-              <td>Excel</td>
-              <td>1.8 MB</td>
-              <td>
-                <button class="btn-icon"><i class="fas fa-download"></i></button>
-                <button class="btn-icon"><i class="fas fa-eye"></i></button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
       </div>
     </div>
 
     <div id="loadingMessage" class="loading" style="display: none;">
-      <i class="fas fa-spinner fa-spin"></i>
-      <span>Processing data...</span>
+      <i class="fas fa-spinner fa-spin"></i> Processing data...
     </div>
-    <div id="errorMessage" class="error" style="display: none;">
-      <i class="fas fa-exclamation-circle"></i>
-      <span></span>
-    </div>
+    <div id="errorMessage" class="error" style="display: none;"></div>
   </div>
 
   <footer>
@@ -928,93 +737,33 @@
     // Global variables
     let rawData = [];
     let filteredData = [];
-    let dataTable = null;
-    let reportsTable = null;
     let charts = {};
+    
+    // Check for saved dark mode preference
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.body.classList.add('dark-mode');
+      document.getElementById('darkModeToggle').classList.add('active');
+    }
 
-    // Full dataset
-    const fullData = `HEAD*,Branch*,Month*,Year*,Receipts*,TALABAT,TABNA,Keeta CARD,Cash,NOON CARD,Master card,Visa Card,Careem CARD,Delivery CARD,SMILES CARD,Delivery Cash,DELIVERO CARD,ONLINE CASH,ONLINE CARD,Count_Receipts,Count_TALABAT,Count_TABNA,Count_Keeta,Count_Cash,Count_NOON,Count_Master,Count_Visa,Count_Careem,Count_DeliveryCard,Count_SMILES,Count_DeliveryCash,Count_DELIVERO,Count_ONLINE_Cash,Count_ONLINE_Card
+    // Sample data from the provided document
+    const sampleData = `HEAD*,Branch*,Month*,Year*,Receipts*,TALABAT,TABNA,Keeta CARD,Cash,NOON CARD,Master card,Visa Card,Careem CARD,Delivery CARD,SMILES CARD,Delivery Cash,DELIVERO CARD,ONLINE CASH,ONLINE CARD,Count_Receipts,Count_TALABAT,Count_TABNA,Count_Keeta,Count_Cash,Count_NOON,Count_Master,Count_Visa,Count_Careem,Count_DeliveryCard,Count_SMILES,Count_DeliveryCash,Count_DELIVERO,Count_ONLINE_Cash,Count_ONLINE_Card
 HEAD,Crispy Chicken-Hamdan St,1,2025,785537.88,55272.96,0,0,207908.13,79328.39,125061.73,78456.25,38265.58,23471.38,50561,95829.04,5482.62,15755.12,9790.68,26775,1144,0,0,9935,2238,4594,2770,1167,449,1498,2308,97,377,192
 HEAD,Crispy Chicken Khaldia,1,2025,584685.4,62454.93,92.59,0,139821,67034.34,88632.53,73895.9,25667.99,13905.94,44374.88,46454.41,8601.88,9089.81,4659.2,19523,1217,2,0,6647,1897,3458,2477,812,249,1343,992,137,202,90
 HEAD,Crispy Chicken Shabiya 11,1,2025,630955.6,35802.49,75,0,167078.54,79487.04,102733.74,69778.54,34104.18,18043.94,77531.22,34733.77,4263.98,4779.37,2618.79,21470,705,2,0,7395,2215,3814,2436,1074,366,2399,835,54,119,58
 HEAD,Crispy Chicken Muroor,1,2025,527597.59,48211.79,35,0,120193.1,50495.26,83440.34,85619.29,32059.59,23144.36,40854.29,36604.32,3547.86,1861.7,1490.69,17770,969,1,0,5888,1452,2990,2820,963,467,1294,788,65,41,31
 HEAD,Crispy Chicken Al Barsha,1,2025,611173.74,38175.48,0,0,178819.55,66462.64,73224.5,84120.81,49244.9,27673.05,50254.01,28078.99,6794.63,5677.37,2647.81,24058,839,0,0,8938,1902,3357,3712,1652,854,1657,872,119,113,43
 HEAD,Crispy Chicken Al Satwa,1,2025,385718.26,28527.83,0,0,124512.61,71302.62,34050.62,34706.38,31417.87,6986.61,25312.49,19861.9,1432.48,5835.16,1736.69,14065,632,0,0,5698,2076,1352,1314,1103,171,837,647,24,167,43
+HEAD,Crispy Chicken Al Rgga,1,2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 HEAD,Crispy Chicken-ELctria,1,2025,740083.76,52228.79,0,0,300244.92,91589.3,150467.4,81937.11,27260.97,0,36355.27,0,0,0,0,30341,1041,0,0,15547,2623,6077,3164,867,0,1022,0,139,0,0
-HEAD,Crispy Chicken-Hamdan St,2,2025,742068.15,55021,0,0,183743.1,71094.5,107837.1,70459.9,39408.15,21608.3,67595.7,89937.3,5805.2,17714.4,10974.5,25749,1176,0,0,8862,2008,4155,2443,1091,424,2746,2036,0,417,227
-HEAD,Crispy Chicken Khaldia,2,2025,566345.35,46961,0,0,132388.5,74018.8,84054.2,68511.6,38073.4,13376.8,47101.9,38340.9,0,9389.9,5271.9,18616,962,0,0,6357,2007,3228,2175,654,234,1685,820,189,206,99
-HEAD,Crispy Chicken Shabiya 11,2,2025,614655,37355,0,0,156116,96768,92407,63840,26731,17188,81636,33918,8856,3616,2724,21387,788,0,0,6899,2546,3508,2128,1046,355,3167,781,26,86,57
-HEAD,Crispy Chicken Muroor,2,2025,501652,37739,0,0,117648,54019,81050,78334,24873,21538,40538,36899,2358,1583,2356,17373,828,0,0,5743,1432,2980,2627,917,435,1457,764,116,33,41
-HEAD,Crispy Chicken Al Barsha,2,2025,610930,37097,0,0,173216,76303,73591,82166,42035,24826,55001,26874,5075,6423,2554,23744,905,0,0,8386,2101,3275,3655,1511,708,1990,819,196,132,46
-HEAD,Crispy Chicken Al Satwa,2,2025,426647,26463,0,0,129080,75702,34280,35911,30554,5245,59401,19104,10135,7295,2684,15427,676,0,0,5885,2121,1351,1349,1155,140,1915,579,15,185,55
-HEAD,Crispy Chicken-ELctria,2,2025,710820,42288,0,0,287078,81781,135760,74742,52610,0,36562,0,0,0,0,28535,945,0,0,14484,2269,5597,2907,923,0,1410,0,0,0,0
-HEAD,Crispy Chicken-Hamdan St,3,2025,603475,58532,0,0,155789,57141,93313,59885,39450,29185,22783,58598,4832,15535,8433,19852,1258,0,0,7130,1508,3590,2115,1198,576,591,1301,92,342,151
-HEAD,Crispy Chicken Khaldia,3,2025,458232,47596,0,0,111460,57406,74431,58843,28444,14203,13248,30418,9539,8569,4075,14684,1071,0,0,5171,1467,2755,1856,757,257,346,634,172,143,55
-HEAD,Crispy Chicken Shabiya 11,3,2025,449434,40882,0,0,118003,65578,80476,50587,27249,15451,20465,24822,2639,1485,1797,15249,879,0,0,5372,1614,3069,1824,918,328,558,578,35,40,34
-HEAD,Crispy Chicken Muroor,3,2025,347325,38980,0,0,72516,38501,58234,56915,24282,17654,9538,24154,2721,2899,932,11328,824,0,0,3642,981,2112,1937,647,343,233,474,68,49,18
-HEAD,Crispy Chicken Al Barsha,3,2025,475552,38379,0,0,149371,48279,65862,70819,35824,21621,13662,20454,6466,3368,1448,18794,937,0,0,7237,1261,3014,3122,1191,745,399,682,108,70,28
-HEAD,Crispy Chicken Al Satwa,3,2025,316798,31064,0,0,108133,41738,33591,32194,27879,6556,13671,15378,763,4200,1632,11430,742,0,0,5047,1085,1269,1198,922,165,373,480,15,100,34
-HEAD,Crispy Chicken-ELctria,3,2025,605099,54285,0,0,243126,72104,127753,66548,27856,0,13426,0,0,0,0,24038,1215,0,0,12074,1960,5149,2563,734,0,343,0,0,0,0
-HEAD,Crispy Chicken-Hamdan St,4,2025,713033,54117,0,0,186015,76678,108985,81529,33316,30359,29152,76266,1355,22847,12414,23797,1283,0,0,8824,2094,4173,2780,774,614,726,1749,30,500,250
-HEAD,Crispy Chicken Khaldia,4,2025,568123,66908,0,0,141795,70411,96104,75239,24688,15049,14043,39737,7781,10360,6011,18743,1583,0,0,6607,1909,3610,2571,528,313,313,843,154,216,96
-HEAD,Crispy Chicken Shabiya 11,4,2025,638250,58114,0,0,170359,91722,113050,76809,27219,17758,29282,39223,2709,7010,4995,20572,1268,0,0,7450,2396,3973,2571,698,361,695,885,30,148,97
-HEAD,Crispy Chicken Muroor,4,2025,526701,58756,0,0,117086,59499,94170,94127,23090,17654,13822,39141,3254,3477,2626,17251,1332,0,0,5759,1568,3301,3085,504,350,321,861,57,68,45
-HEAD,Crispy Chicken Al Barsha,4,2025,587672,56933,0,0,172377,69636,72509,85776,35818,28897,17572,32525,5984,6924,2723,22717,1466,0,0,8636,1861,3373,3863,923,927,488,889,110,134,47
-HEAD,Crispy Chicken Al Satwa,4,2025,401400,46662,0,0,136611,55635,37768,43046,25926,7003,14256,22151,834,9114,2395,14139,1189,0,0,6186,1539,1451,1591,650,222,348,659,21,220,63
-HEAD,Crispy Chicken-ELctria,4,2025,725004,85789,0,0,285810,79148,144394,83074,29679,0,17109,0,0,0,0,28496,2045,0,0,14226,2248,5717,3179,685,0,396,0,0,0,0
-HEAD,Crispy Chicken-Hamdan St,5,2025,779896,78502,0,0,179545,67466,105429,87058,76728,42337,29013,74728,0,23807,15283,26810,2006,0,0,8747,1726,4089,3045,2496,822,1281,1693,0,599,306
-HEAD,Crispy Chicken Khaldia,5,2025,636993,101706,0,0,133816,55736,92046,77474,65816,18712,24937,35898,10535,12771,7547,21403,2479,0,0,6398,1401,3601,2682,1989,351,1104,732,227,296,143
-HEAD,Crispy Chicken Shabiya 11,5,2025,690026,82371,0,0,162737,81939,103721,74483,66268,24338,45809,32365,2950,9288,3757,23546,1992,0,0,7272,1935,3805,2471,2125,472,2416,715,35,229,79
-HEAD,Crispy Chicken Muroor,5,2025,537998,72218,0,0,114084,41839,90525,91953,45571,21529,17892,32773,3176,4181,2257,18430,1768,0,0,5778,1032,3236,3130,1448,415,753,679,60,90,41
-HEAD,Crispy Chicken Al Barsha,5,2025,629875,89097,0,0,174601,60410,78602,97187,51858,15438,25703,21551,6389,6703,2336,24979,2413,0,0,9058,1505,3491,4270,1783,377,1294,504,108,134,42
-HEAD,Crispy Chicken Al Satwa,5,2025,467366,85653,0,0,145734,55119,42166,46452,37543,4926,19178,15705,1504,10683,2705,16409,2333,0,0,6479,1377,1615,1700,1333,119,682,387,36,274,74
-HEAD,Crispy Chicken-ELctria,5,2025,805574,105622,0,0,279069,70771,147053,90211,83506,0,29343,0,0,0,0,31864,2717,0,0,13999,1876,5927,3466,2468,0,1411,0,0,0,0
-HEAD,Crispy Chicken-Hamdan St,6,2025,802423,70292,0,0,167802,70183,95082,80224,132121,48376,42430,57853,0,24627,13433,26357,1488,0,0,7747,1805,3574,2765,3986,943,1874,1375,0,545,255
-HEAD,Crispy Chicken Khaldia,6,2025,673052,110787,0,0,125489,65632,76391,67506,107790,25847,30508,31013,12987,13310,5792,21006,2258,0,0,5692,1635,2830,2274,3208,449,1330,629,324,268,109
-HEAD,Crispy Chicken Shabiya 11,6,2025,709111,81004,0,0,150377,91791,84279,65831,97073,25525,64348,29086,4447,11083,4267,22937,1697,0,0,6385,2177,3121,2154,2869,490,3039,624,75,227,79
-HEAD,Crispy Chicken Muroor,6,2025,572961,75585,0,0,103700,47024,78331,83033,95629,24271,23823,31775,3190,4296,2304,18287,1560,0,0,4979,1165,2733,2748,2864,455,980,621,62,91,29
-HEAD,Crispy Chicken Al Barsha,6,2025,664194,82159,0,0,165442,74703,69534,89734,91895,19547,36868,21890,4546,5948,1929,24731,1869,0,0,8348,1889,3080,3981,2660,439,1765,452,87,123,38
-HEAD,Crispy Chicken Al Satwa,6,2025,509383,78146,0,0,145487,68818,38024,46192,71964,6535,24912,14470,1021,10675,3140,16685,1759,0,0,6172,1774,1389,1669,2098,154,997,309,21,268,75
-HEAD,Crispy Chicken-ELctria,6,2025,835561,77935,0,0,276155,81448,128718,81217,149331,0,40759,0,0,0,0,31156,1685,0,0,12991,2142,4959,3003,4565,0,1811,0,0,0,0
-HEAD,Crispy Chicken-Hamdan St,7,2025,777059,66926,0,0,172422,89252,99074,79656,92368,51512,26574,57693,0,26365,15218,26169,1591,0,0,8455,2336,4052,2900,2370,1151,901,1406,0,682,325
-HEAD,Crispy Chicken Khaldia,7,2025,694472,117570,0,0,127529,119262,77362,65523,80289,24510,19850,27107,17704,11913,5853,22152,2681,0,0,6279,3033,3060,2411,2025,501,675,596,465,297,129
-HEAD,Crispy Chicken Shabiya 11,7,2025,741668,69782,0,0,152950,182336,93975,65938,66698,23603,35455,31557,2465,12399,4511,23241,1578,0,0,6871,4241,3565,2355,1699,517,1321,660,30,312,92
-HEAD,Crispy Chicken Muroor,7,2025,564894,65617,0,0,104652,84981,80619,85486,63692,26768,17051,26233,3669,4193,1934,18295,1521,0,0,5239,2149,2930,2887,1653,550,594,564,83,95,30
-HEAD,Crispy Chicken Al Barsha,7,2025,618162,54250,0,0,160480,108752,67286,93884,47575,23715,27647,20912,5208,5862,2591,23642,1303,0,0,8525,2735,3131,4265,1288,521,1091,486,124,124,49
-HEAD,Crispy Chicken Al Satwa,7,2025,522714,53308,0,0,152499,112494,42893,56616,39813,8327,20813,16358,1510,13781,4302,17692,1275,0,0,6968,2870,1619,2027,1101,184,794,344,26,376,108
-HEAD,Crispy Chicken-ELctria,7,2025,857463,106326,0,0,270914,141613,123621,85049,104305,0,25636,0,0,0,0,31963,2537,0,0,13510,3788,5195,3357,2692,0,884,0,0,0,0
-HEAD,Crispy Chicken-Hamdan St,8,2025,755185,34146,0,0,153604,82445,90103,72028,169359,55025,15481,48160,0,23005,11830,25560,773,0,0,7589,2245,3613,2556,5174,1139,592,1108,0,551,220
-HEAD,Crispy Chicken Khaldia,8,2025,637005,85718,0,0,105227,84210,70392,61783,138503,27760,10877,23280,11894,11874,5488,20366,1868,0,0,5043,2209,2721,2215,4171,511,407,521,335,252,113
-HEAD,Crispy Chicken Shabiya 11,8,2025,694108,49748,0,0,142059,120862,86039,65923,138678,30475,21513,24861,1383,9287,3281,22402,1069,0,0,6426,2894,3211,2342,4088,606,929,556,21,190,70
-HEAD,Crispy Chicken Muroor,8,2025,516549,47553,0,0,97706,62998,72921,80103,94396,23239,8410,21123,2217,3830,2054,16968,1015,0,0,4790,1625,2651,2710,2813,492,297,420,39,80,36
-HEAD,Crispy Chicken Al Barsha,8,2025,648694,52223,0,0,156793,88139,67636,89041,118072,24316,12843,24980,7248,4831,2573,23814,1208,0,0,7983,2267,2987,3984,3639,498,531,403,155,109,50
-HEAD,Crispy Chicken Al Satwa,8,2025,532037,47974,0,0,140287,99441,40174,50753,105013,8770,9176,13706,1840,11338,3565,17853,1155,0,0,6294,2562,1490,1845,3254,178,322,314,52,287,100
-HEAD,Crispy Chicken-ELctria,8,2025,805213,71230,0,0,248702,100729,117441,81469,174851,0,10792,0,0,0,0,30581,1706,0,0,12414,2751,4762,3138,5390,0,420,0,0,0,0
-HEAD,Crispy Chicken-Hamdan St,9,2025,722127,0,0,0,156498,121183,90564,73916,96353,58981,35906,47581,0,25945,15201,24619,0,0,0,7519,3553,3600,2753,2674,1234,1286,1111,0,602,287
-HEAD,Crispy Chicken Khaldia,9,2025,571512,0,0,0,114135,118512,73709,62959,81101,29907,27564,27863,19269,9427,7068,19137,0,0,0,5554,3300,2890,2280,2218,581,949,563,486,194,122
-HEAD,Crispy Chicken Shabiya 11,9,2025,669003,0,0,0,137533,171659,86173,67247,80977,33671,52701,27619,1004,6870,3550,21870,0,0,0,6169,4558,3150,2314,2267,656,1914,613,13,157,59
-HEAD,Crispy Chicken Muroor,9,2025,493891,0,0,0,107633,89313,78435,77197,57361,25414,21535,25604,4731,4368,2300,16509,0,0,0,5077,2468,2844,2671,1568,516,707,457,82,87,32
-HEAD,Crispy Chicken Al Barsha,9,2025,629720,0,0,15675,158981,143838,64293,87490,74320,22251,25438,21110,7835,5656,2834,23756,0,0,209,7945,3922,2859,3898,2027,464,1703,415,147,107,60
-HEAD,Crispy Chicken Al Satwa,9,2025,557244,0,0,16425,146964,163810,40365,52771,63710,8561,33052,14505,1850,11576,3656,19546,0,0,235,6658,4648,1565,1957,1783,189,1781,306,48,285,91
-HEAD,Crispy Chicken Al Rgga,9,2025,76198,0,0,4506,31690,957,14339,20902,559,317,1252,1676,0,0,0,3680,0,0,77,1789,24,701,960,12,5,72,40,0,0,0
-HEAD,Crispy Chicken-ELctria,9,2025,727587,0,0,0,249546,139599,122085,85521,99607,0,31229,0,0,0,0,28364,0,0,0,12162,4064,4951,3296,2824,0,1067,0,0,0,0
-HEAD,Crispy Chicken-Hamdan St,10,2025,763733,0,0,22559,162449,166804,97561,81148,69649,58669,27576,44898,25,21848,10547,25438,0,0,422,7769,5322,3745,2929,1665,1159,732,1006,1,473,215
-HEAD,Crispy Chicken Khaldia,10,2025,649242,0,0,21671,120480,154665,82430,74845,59465,34178,25588,27116,30989,10075,7741,21131,0,0,422,5756,4715,3230,2673,1367,627,643,537,807,215,139
-HEAD,Crispy Chicken Shabiya 11,10,2025,744779,0,0,29489,146400,233078,89193,66144,66152,30475,40811,27482,3848,8216,3492,23560,0,0,549,6418,6833,3312,2370,1505,635,1040,590,54,187,67
-HEAD,Crispy Chicken Muroor,10,2025,536168,0,0,18125,107685,113348,83137,86209,44178,31844,19074,18651,8483,3904,1531,17785,0,0,355,5224,3465,2980,2979,1027,587,496,386,197,64,25
-HEAD,Crispy Chicken Al Barsha,10,2025,781436,0,0,167922,159604,184973,64795,85309,40084,20929,16125,23890,10398,6119,1287,26087,0,0,3337,8063,5237,3018,3826,987,444,475,406,172,98,24
-HEAD,Crispy Chicken Al Satwa,10,2025,655294,0,0,168826,153982,172459,43650,55354,22141,4026,12204,8747,2723,9092,2091,20525,0,0,3361,6761,5093,1759,2006,549,94,357,199,58,239,49
-HEAD,Crispy Chicken Al Rgga,10,2025,773870,0,0,282732,174333,119856,68382,98023,5697,6837,7261,7798,876,1747,329,25777,0,0,5827,8364,3914,2853,4054,143,156,200,176,28,53,9
-HEAD,Crispy Chicken-ELctria,10,2025,825525,0,0,23083,276572,192047,134870,96546,75943,0,26464,0,0,0,0,31776,0,0,464,13436,6326,5343,3726,1807,0,674,0,0,0,0`;
+HEAD,Crispy Chicken-Hamdan St,2,2025,742068.15,55021,0,0,183743.1,71094.5,107837.1,70459.9,39408.15,21608.3,67595.7,89937.3,5805.2,17714.4,10974.5,25749,1176,0,0,8862,2008,4155,2433,1091,424,2746,2036,0,417,227
+HEAD,Crispy Chicken Khaldia,2,2025,566345.35,46961,0,0,132388.5,74018.8,84054.2,68511.6,38073.4,13376.8,47101.9,38340.9,0,9389.9,5271.9,18616,962,0,0,6357,2007,3228,2175,654,234,1685,820,189,206,99`.split('\n').map(row => row.split(','));
 
-    // Initialize with full data
+    // Initialize with sample data
     document.addEventListener('DOMContentLoaded', () => {
-      processExcelData(fullData);
+      processExcelData(sampleData);
       setupEventListeners();
       populateFilters();
-      initializeDataTables();
       updateDashboard();
-      updateAnalysis();
       document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
     });
 
@@ -1041,18 +790,29 @@ HEAD,Crispy Chicken-ELctria,10,2025,825525,0,0,23083,276572,192047,134870,96546,
 
       document.getElementById('applyFilters').addEventListener('click', applyFilters);
       document.getElementById('downloadTemplate').addEventListener('click', downloadTemplate);
-      document.getElementById('loadSampleData').addEventListener('click', loadSampleData);
-      document.getElementById('exportPDF').addEventListener('click', exportPDF);
-      document.getElementById('exportCSV').addEventListener('click', exportCSV);
-      document.getElementById('exportExcel').addEventListener('click', exportExcel);
-      document.getElementById('refreshTable').addEventListener('click', refreshDataTable);
-      document.getElementById('generateReport').addEventListener('click', generateReport);
+      document.getElementById('clearFilters').addEventListener('click', clearFilters);
+      document.getElementById('refreshBtn').addEventListener('click', refreshData);
+      document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+      
+      // Export dropdown
+      document.getElementById('exportBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.getElementById('exportMenu').classList.toggle('show');
+      });
+      
+      document.addEventListener('click', () => {
+        document.getElementById('exportMenu').classList.remove('show');
+      });
+      
+      document.getElementById('exportPDF').addEventListener('click', exportToPDF);
+      document.getElementById('exportExcel').addEventListener('click', exportToExcel);
 
       // Tab switching
-      document.querySelectorAll('.nav-tab').forEach(tab => {
+      document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', () => {
-          document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          const parent = tab.closest('.tabs').parentElement;
+          parent.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          parent.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
           tab.classList.add('active');
           document.getElementById(tab.dataset.tab).classList.add('active');
         });
@@ -1072,43 +832,25 @@ HEAD,Crispy Chicken-ELctria,10,2025,825525,0,0,23083,276572,192047,134870,96546,
 
     function handleFile(file) {
       if (!file) return;
-      
-      const validTypes = ['.xlsx', '.xls', '.csv'];
-      const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
-      
-      if (!validTypes.includes(fileExtension)) {
-        showError(`Please upload a valid file (${validTypes.join(', ')})`);
+      if (!file.name.endsWith('.xlsx')) {
+        showError('Please upload an Excel (.xlsx) file.');
         return;
       }
-      
       if (file.size > 10 * 1024 * 1024) {
         showError('File size must be under 10MB.');
         return;
       }
 
-      showLoading('Reading file...');
+      showLoading('Reading Excel file...');
       const reader = new FileReader();
-      
       reader.onload = function(e) {
         try {
-          let data;
-          
-          if (fileExtension === '.csv') {
-            const csv = e.target.result;
-            data = csv.split('\n').map(row => row.split(','));
-          } else {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const csv = XLSX.utils.sheet_to_csv(sheet);
-            data = csv.split('\n').map(row => row.split(','));
-          }
-          
-          if (!validateAndCleanData(data)) {
-            return;
-          }
-          
-          processExcelData(data.join('\n'));
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const csv = XLSX.utils.sheet_to_csv(sheet);
+          const rows = csv.split('\n').map(row => row.split(','));
+          processExcelData(rows);
           showLoading('Processing data...');
           setTimeout(() => {
             hideLoading();
@@ -1117,58 +859,32 @@ HEAD,Crispy Chicken-ELctria,10,2025,825525,0,0,23083,276572,192047,134870,96546,
             document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
           }, 300);
         } catch (err) {
-          showError('Failed to process file: ' + err.message);
+          showError('Failed to process Excel file: ' + err.message);
           hideLoading();
         }
       };
-      
-      if (fileExtension === '.csv') {
-        reader.readAsText(file);
-      } else {
-        reader.readAsArrayBuffer(file);
-      }
+      reader.readAsArrayBuffer(file);
     }
 
-    function validateAndCleanData(data) {
-      if (data.length < 2) {
-        showError('File is empty or invalid');
-        return false;
-      }
-      
-      const headers = data[0].map(h => h.replace(/\*$/g, '').trim());
-      const requiredFields = ['Branch', 'Month', 'Year', 'Receipts'];
-      const missingFields = requiredFields.filter(field => !headers.includes(field));
-      
-      if (missingFields.length > 0) {
-        showError(`Missing required fields: ${missingFields.join(', ')}`);
-        return false;
-      }
-      
-      return true;
-    }
-
-    function loadSampleData() {
-      processExcelData(fullData);
-      populateFilters();
-      applyFilters();
-      document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
-    }
-
-    function processExcelData(csvData) {
-      const rows = csvData.split('\n').map(row => row.split(','));
+    function processExcelData(rows) {
       if (rows.length < 2) return;
-      
-      const data = rows.map(row => row.join(',')).join('\n');
-      const parsedData = XLSX.read(data, { type: 'string' });
-      const jsonData = XLSX.utils.sheet_to_json(parsedData.Sheets[parsedData.SheetNames[0]]);
-      
-      rawData = jsonData.map(row => {
-        if (row.Month && row.Year) {
-          row.Date = new Date(row.Year, row.Month - 1, 1);
+      const headers = rows[0].map(h => h.replace(/\*$/g, '').trim());
+      rawData = rows.slice(1).map(row => {
+        const obj = {};
+        headers.forEach((h, i) => {
+          let val = row[i] ? row[i].trim() : '';
+          if (!isNaN(val) && val !== '') {
+            obj[h] = parseFloat(val);
+          } else {
+            obj[h] = val;
+          }
+        });
+        // Create date from Month and Year
+        if (obj.Month && obj.Year) {
+          obj.Date = new Date(obj.Year, obj.Month - 1, 1);
         }
-        return row;
+        return obj;
       }).filter(row => row.Branch && row.Branch.includes('Crispy Chicken') && row.Receipts > 0);
-      
       filteredData = [...rawData];
     }
 
@@ -1209,42 +925,129 @@ HEAD,Crispy Chicken-ELctria,10,2025,825525,0,0,23083,276572,192047,134870,96546,
       const month = document.getElementById('filterMonth').value;
       const year = document.getElementById('filterYear').value;
       const branch = document.getElementById('filterBranch').value;
-      const payment = document.getElementById('filterPayment').value;
+      const from = document.getElementById('filterDateFrom').value;
+      const to = document.getElementById('filterDateTo').value;
 
       filteredData = rawData.filter(row => {
         if (month && row.Month != month) return false;
         if (year && row.Year != year) return false;
         if (branch && row.Branch !== branch) return false;
-        if (payment) {
-          if (payment === 'cash' && (!row.Cash || row.Cash === 0)) return false;
-          if (payment === 'card' && (!row['Visa Card'] && !row['Master card'])) return false;
-          if (payment === 'online' && (!row['ONLINE CASH'] && !row['ONLINE CARD'])) return false;
+        if (from) {
+          const rowDate = new Date(row.Year, row.Month - 1, 1);
+          const fromDate = new Date(from);
+          if (rowDate < fromDate) return false;
+        }
+        if (to) {
+          const rowDate = new Date(row.Year, row.Month - 1, 1);
+          const toDate = new Date(to);
+          toDate.setMonth(toDate.getMonth() + 1);
+          if (rowDate >= toDate) return false;
         }
         return true;
       });
 
       updateDashboard();
-      updateAnalysis();
-      refreshDataTable();
+    }
+
+    function clearFilters() {
+      document.getElementById('filterMonth').value = '';
+      document.getElementById('filterYear').value = '';
+      document.getElementById('filterBranch').value = '';
+      document.getElementById('filterDateFrom').value = '';
+      document.getElementById('filterDateTo').value = '';
+      filteredData = [...rawData];
+      updateDashboard();
+    }
+
+    function refreshData() {
+      showLoading('Refreshing data...');
+      setTimeout(() => {
+        updateDashboard();
+        hideLoading();
+        document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+      }, 1000);
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      document.getElementById('darkModeToggle').classList.toggle('active');
+      localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+      
+      // Update chart colors for dark mode
+      Object.values(charts).forEach(chart => {
+        if (chart) {
+          updateChartForDarkMode(chart);
+        }
+      });
+    }
+
+    function updateChartForDarkMode(chart) {
+      if (chart.options.scales) {
+        Object.values(chart.options.scales).forEach(scale => {
+          if (scale.ticks) {
+            scale.ticks.color = document.body.classList.contains('dark-mode') ? '#e2e8f0' : '#333';
+          }
+          if (scale.grid) {
+            scale.grid.color = document.body.classList.contains('dark-mode') ? '#4a5568' : '#dee2e6';
+          }
+        });
+      }
+      
+      if (chart.options.plugins && chart.options.plugins.legend) {
+        chart.options.plugins.legend.labels.color = document.body.classList.contains('dark-mode') ? '#e2e8f0' : '#333';
+      }
+      
+      chart.update();
+    }
+
+    function exportToPDF() {
+      showLoading('Generating PDF report...');
+      // In a real implementation, you would use a PDF library like jsPDF
+      setTimeout(() => {
+        hideLoading();
+        alert('PDF export functionality would be implemented here with a library like jsPDF');
+      }, 1500);
+    }
+
+    function exportToExcel() {
+      showLoading('Generating Excel report...');
+      
+      // Create a new workbook
+      const wb = XLSX.utils.book_new();
+      
+      // Prepare summary data
+      const summary = [
+        ['Metric', 'Value'],
+        ['Total Receipts', document.getElementById('totalReceipts').textContent],
+        ['Total Delivery', document.getElementById('totalDelivery').textContent],
+        ['Total Online', document.getElementById('totalOnline').textContent],
+        ['Total Platforms', document.getElementById('totalPlatforms').textContent],
+        ['Card Payments', document.getElementById('cardPercentage').textContent],
+        ['Cash Payments', document.getElementById('cashPercentage').textContent],
+        ['Total Transactions', document.getElementById('totalTransactions').textContent],
+        ['Avg Transaction Value', document.getElementById('avgTransaction').textContent]
+      ];
+      
+      // Create worksheet for summary
+      const wsSummary = XLSX.utils.aoa_to_sheet(summary);
+      
+      // Create worksheet for filtered data
+      const headers = Object.keys(filteredData[0] || {});
+      const wsData = XLSX.utils.json_to_sheet(filteredData);
+      
+      // Add worksheets to workbook
+      XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+      XLSX.utils.book_append_sheet(wb, wsData, 'Data');
+      
+      // Generate and download file
+      XLSX.writeFile(wb, 'Crispy_Chicken_Sales_Report.xlsx');
+      hideLoading();
     }
 
     function updateDashboard() {
-      updateDataStats();
       updateSummaryCards();
-      updateCharts();
-    }
-
-    function updateDataStats() {
-      document.getElementById('totalRecords').textContent = filteredData.length.toLocaleString();
-      
-      const totalSales = filteredData.reduce((sum, r) => sum + (r.Receipts || 0), 0);
-      document.getElementById('totalSales').textContent = formatCurrency(totalSales);
-      
-      const totalOrders = filteredData.reduce((sum, r) => sum + (r.Count_Receipts || 0), 0);
-      document.getElementById('totalOrders').textContent = totalOrders.toLocaleString();
-      
-      const activeBranches = [...new Set(filteredData.map(r => r.Branch))].length;
-      document.getElementById('activeBranches').textContent = activeBranches;
+      updatePaymentAnalysis();
+      updateDeliveryPerformance();
     }
 
     function updateSummaryCards() {
@@ -1262,6 +1065,9 @@ HEAD,Crispy Chicken-ELctria,10,2025,825525,0,0,23083,276572,192047,134870,96546,
         (r['ONLINE CARD'] || 0) + (r['Delivery CARD'] || 0) + (r['Keeta CARD'] || 0), 0);
       const cashPayments = filteredData.reduce((sum, r) => sum + (r.Cash || 0) + (r['Delivery Cash'] || 0) + (r['ONLINE CASH'] || 0), 0);
 
+      const totalTransactions = filteredData.reduce((sum, r) => sum + (r.Count_Receipts || 0), 0);
+      const avgTransactionValue = totalTransactions > 0 ? totalReceipts / totalTransactions : 0;
+
       const cardPct = totalReceipts > 0 ? (cardPayments / totalReceipts * 100).toFixed(1) : 0;
       const cashPct = totalReceipts > 0 ? (cashPayments / totalReceipts * 100).toFixed(1) : 0;
 
@@ -1271,40 +1077,39 @@ HEAD,Crispy Chicken-ELctria,10,2025,825525,0,0,23083,276572,192047,134870,96546,
       document.getElementById('totalPlatforms').textContent = formatCurrency(platforms);
       document.getElementById('cardPercentage').textContent = cardPct + '%';
       document.getElementById('cashPercentage').textContent = cashPct + '%';
+      document.getElementById('totalTransactions').textContent = totalTransactions.toLocaleString();
+      document.getElementById('avgTransaction').textContent = formatCurrency(avgTransactionValue);
     }
 
-    function updateCharts() {
-      updateSalesTrendChart();
-      updatePaymentDistributionChart();
+    function updatePaymentAnalysis() {
+      updateVisaMaster();
+      updateCashCard();
+      updatePlatformPerformance();
     }
 
-    function updateSalesTrendChart() {
-      const monthlyData = {};
-      filteredData.forEach(r => {
-        const key = `${r.Year}-${String(r.Month).padStart(2, '0')}`;
-        if (!monthlyData[key]) monthlyData[key] = 0;
-        monthlyData[key] += r.Receipts || 0;
-      });
+    function updateVisaMaster() {
+      const visaTotal = filteredData.reduce((sum, r) => sum + (r['Visa Card'] || 0), 0);
+      const masterTotal = filteredData.reduce((sum, r) => sum + (r['Master card'] || 0), 0);
+      const visaCount = filteredData.reduce((sum, r) => sum + (r.Count_Visa || 0), 0);
+      const masterCount = filteredData.reduce((sum, r) => sum + (r.Count_Master || 0), 0);
+      const total = visaTotal + masterTotal;
 
-      const sorted = Object.keys(monthlyData).sort();
-      const labels = sorted.map(k => {
-        const [y, m] = k.split('-');
-        return new Date(y, m-1, 1).toLocaleString('default', { month: 'short', year: 'numeric' });
-      });
-      const data = sorted.map(k => monthlyData[k]);
+      const visaAvg = visaCount > 0 ? visaTotal / visaCount : 0;
+      const masterAvg = masterCount > 0 ? masterTotal / masterCount : 0;
+      const visaShare = total > 0 ? (visaTotal / total * 100).toFixed(1) : 0;
+      const masterShare = total > 0 ? (masterTotal / total * 100).toFixed(1) : 0;
 
-      if (charts.salesTrend) charts.salesTrend.destroy();
-      charts.salesTrend = new Chart(document.getElementById('salesTrendChart'), {
-        type: 'line',
+      // Chart
+      if (charts.visaMaster) charts.visaMaster.destroy();
+      charts.visaMaster = new Chart(document.getElementById('visaMasterChart'), {
+        type: 'bar',
         data: {
-          labels: labels,
+          labels: ['Visa', 'Mastercard'],
           datasets: [{
-            label: 'Monthly Sales',
-            data: data,
-            borderColor: '#e63946',
-            backgroundColor: 'rgba(230, 57, 70, 0.1)',
-            tension: 0.3,
-            fill: true
+            label: 'Total Amount (AED)',
+            data: [visaTotal, masterTotal],
+            backgroundColor: ['#4CAF50', '#2196F3'],
+            borderRadius: 6
           }]
         },
         options: {
@@ -1314,28 +1119,111 @@ HEAD,Crispy Chicken-ELctria,10,2025,825525,0,0,23083,276572,192047,134870,96546,
             tooltip: { callbacks: { label: ctx => formatCurrency(ctx.parsed.y) } }
           },
           scales: {
-            y: { ticks: { callback: value => 'AED ' + abbreviateNumber(value) } }
+            y: { 
+              beginAtZero: true, 
+              ticks: { 
+                callback: value => 'AED ' + abbreviateNumber(value),
+                color: document.body.classList.contains('dark-mode') ? '#e2e8f0' : '#333'
+              },
+              grid: {
+                color: document.body.classList.contains('dark-mode') ? '#4a5568' : '#dee2e6'
+              }
+            },
+            x: {
+              ticks: {
+                color: document.body.classList.contains('dark-mode') ? '#e2e8f0' : '#333'
+              },
+              grid: {
+                color: document.body.classList.contains('dark-mode') ? '#4a5568' : '#dee2e6'
+              }
+            }
           }
         }
       });
+
+      // Table
+      const tbody = document.querySelector('#visaMasterTable tbody');
+      tbody.innerHTML = `
+        <tr><td>Visa</td><td>${formatCurrency(visaTotal)}</td><td>${visaCount}</td><td>${formatCurrency(visaAvg)}</td><td>${visaShare}%</td></tr>
+        <tr><td>Mastercard</td><td>${formatCurrency(masterTotal)}</td><td>${masterCount}</td><td>${formatCurrency(masterAvg)}</td><td>${masterShare}%</td></tr>
+      `;
     }
 
-    function updatePaymentDistributionChart() {
-      const cash = filteredData.reduce((sum, r) => sum + (r.Cash || 0), 0);
-      const visa = filteredData.reduce((sum, r) => sum + (r['Visa Card'] || 0), 0);
-      const master = filteredData.reduce((sum, r) => sum + (r['Master card'] || 0), 0);
-      const talabat = filteredData.reduce((sum, r) => sum + (r.TALABAT || 0), 0);
-      const delivery = filteredData.reduce((sum, r) => sum + (r['Delivery CARD'] || 0) + (r['Delivery Cash'] || 0), 0);
-      const online = filteredData.reduce((sum, r) => sum + (r['ONLINE CASH'] || 0) + (r['ONLINE CARD'] || 0), 0);
+    function updateCashCard() {
+      const cardTotal = filteredData.reduce((sum, r) => sum + 
+        (r['Visa Card'] || 0) + (r['Master card'] || 0) + (r['NOON CARD'] || 0) + 
+        (r['Careem CARD'] || 0) + (r['SMILES CARD'] || 0) + (r['DELIVERO CARD'] || 0) + 
+        (r['ONLINE CARD'] || 0) + (r['Delivery CARD'] || 0) + (r['Keeta CARD'] || 0), 0);
+      const cashTotal = filteredData.reduce((sum, r) => sum + (r.Cash || 0) + (r['Delivery Cash'] || 0) + (r['ONLINE CASH'] || 0), 0);
+      const total = cardTotal + cashTotal;
 
-      if (charts.paymentDistribution) charts.paymentDistribution.destroy();
-      charts.paymentDistribution = new Chart(document.getElementById('paymentDistributionChart'), {
+      const cardCount = filteredData.reduce((sum, r) => sum + 
+        (r.Count_Visa || 0) + (r.Count_Master || 0) + (r.Count_NOON || 0) + 
+        (r.Count_Careem || 0) + (r.Count_SMILES || 0) + (r.Count_DELIVERO || 0) + 
+        (r.Count_ONLINE_Card || 0) + (r.Count_DeliveryCard || 0) + (r.Count_Keeta || 0), 0);
+      const cashCount = filteredData.reduce((sum, r) => sum + (r.Count_Cash || 0) + (r.Count_DeliveryCash || 0) + (r.Count_ONLINE_Cash || 0), 0);
+
+      // Chart
+      if (charts.cashCard) charts.cashCard.destroy();
+      charts.cashCard = new Chart(document.getElementById('cashCardChart'), {
         type: 'doughnut',
         data: {
-          labels: ['Cash', 'Visa', 'Mastercard', 'Talabat', 'Delivery', 'Online'],
+          labels: ['Card Payments', 'Cash Payments'],
           datasets: [{
-            data: [cash, visa, master, talabat, delivery, online],
-            backgroundColor: ['#4CAF50', '#2196F3', '#FF9800', '#e63946', '#2a9d8f', '#9C27B0'],
+            data: [cardTotal, cashTotal],
+            backgroundColor: ['#FF9800', '#4CAF50'],
+            borderWidth: 2,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom' },
+            tooltip: { callbacks: { label: ctx => `${ctx.label}: ${formatCurrency(ctx.parsed)}` } }
+          }
+        }
+      });
+
+      // Table
+      const tbody = document.querySelector('#cashCardTable tbody');
+      tbody.innerHTML = `
+        <tr><td>Card</td><td>${formatCurrency(cardTotal)}</td><td>${cardCount}</td><td>${total > 0 ? (cardTotal / total * 100).toFixed(1) : 0}%</td></tr>
+        <tr><td>Cash</td><td>${formatCurrency(cashTotal)}</td><td>${cashCount}</td><td>${total > 0 ? (cashTotal / total * 100).toFixed(1) : 0}%</td></tr>
+      `;
+    }
+
+    function updatePlatformPerformance() {
+      const platforms = [
+        { name: 'TALABAT', field: 'TALABAT', count: 'Count_TALABAT' },
+        { name: 'NOON', field: 'NOON CARD', count: 'Count_NOON' },
+        { name: 'Careem', field: 'Careem CARD', count: 'Count_Careem' },
+        { name: 'Smiles', field: 'SMILES CARD', count: 'Count_SMILES' },
+        { name: 'Deliveroo', field: 'DELIVERO CARD', count: 'Count_DELIVERO' },
+        { name: 'Keeta', field: 'Keeta CARD', count: 'Count_Keeta' }
+      ];
+
+      const data = platforms.map(p => ({
+        name: p.name,
+        total: filteredData.reduce((sum, r) => sum + (r[p.field] || 0), 0),
+        count: filteredData.reduce((sum, r) => sum + (r[p.count] || 0), 0)
+      })).filter(d => d.total > 0);
+
+      const total = data.reduce((sum, d) => sum + d.total, 0);
+      data.forEach(d => {
+        d.avg = d.count > 0 ? d.total / d.count : 0;
+        d.share = total > 0 ? (d.total / total * 100).toFixed(1) : 0;
+      });
+
+      // Chart
+      if (charts.platformPie) charts.platformPie.destroy();
+      charts.platformPie = new Chart(document.getElementById('platformPieChart'), {
+        type: 'pie',
+        data: {
+          labels: data.map(d => d.name),
+          datasets: [{
+            data: data.map(d => d.total),
+            backgroundColor: ['#e63946', '#2a9d8f', '#f4a261', '#e9c46a', '#457b9d', '#1d3557'],
             borderWidth: 2,
             borderColor: '#fff'
           }]
@@ -1348,122 +1236,55 @@ HEAD,Crispy Chicken-ELctria,10,2025,825525,0,0,23083,276572,192047,134870,96546,
           }
         }
       });
+
+      // Table
+      const tbody = document.querySelector('#platformTable tbody');
+      tbody.innerHTML = data.map(d => `
+        <tr>
+          <td>${d.name}</td>
+          <td>${formatCurrency(d.total)}</td>
+          <td>${d.count}</td>
+          <td>${formatCurrency(d.avg)}</td>
+          <td>${d.share}%</td>
+        </tr>
+      `).join('');
     }
 
-    function updateAnalysis() {
-      // Calculate top performing branch
-      const branchSales = {};
-      filteredData.forEach(r => {
-        if (!branchSales[r.Branch]) branchSales[r.Branch] = 0;
-        branchSales[r.Branch] += r.Receipts || 0;
-      });
-      const topBranch = Object.entries(branchSales).sort((a, b) => b[1] - a[1])[0];
-      document.getElementById('topBranch').textContent = topBranch ? topBranch[0].replace('Crispy Chicken', '').trim() : '-';
-
-      // Calculate average order value
-      const totalSales = filteredData.reduce((sum, r) => sum + (r.Receipts || 0), 0);
-      const totalOrders = filteredData.reduce((sum, r) => sum + (r.Count_Receipts || 0), 0);
-      const avgOrder = totalOrders > 0 ? totalSales / totalOrders : 0;
-      document.getElementById('avgOrderValue').textContent = formatCurrency(avgOrder);
-
-      // Find peak sales month
-      const monthlySales = {};
-      filteredData.forEach(r => {
-        const monthName = new Date(r.Year, r.Month - 1, 1).toLocaleString('default', { month: 'long' });
-        if (!monthlySales[monthName]) monthlySales[monthName] = 0;
-        monthlySales[monthName] += r.Receipts || 0;
-      });
-      const peakMonth = Object.entries(monthlySales).sort((a, b) => b[1] - a[1])[0];
-      document.getElementById('peakMonth').textContent = peakMonth ? peakMonth[0] : '-';
-
-      // Most popular payment method
-      const paymentMethods = {
-        'Cash': filteredData.reduce((sum, r) => sum + (r.Cash || 0), 0),
-        'Visa': filteredData.reduce((sum, r) => sum + (r['Visa Card'] || 0), 0),
-        'Mastercard': filteredData.reduce((sum, r) => sum + (r['Master card'] || 0), 0),
-        'Talabat': filteredData.reduce((sum, r) => sum + (r.TALABAT || 0), 0)
-      };
-      const popularPayment = Object.entries(paymentMethods).sort((a, b) => b[1] - a[1])[0];
-      document.getElementById('popularPayment').textContent = popularPayment ? popularPayment[0] : '-';
-
-      updateAnalysisCharts();
+    function updateDeliveryPerformance() {
+      updateBranchComparison();
+      updateDeliveryTypes();
+      updateMonthlyTrends();
+      updateInternalTrends();
     }
 
-    function updateAnalysisCharts() {
-      updateBranchComparisonChart();
-      updateMonthlyPerformanceChart();
-    }
-
-    function updateBranchComparisonChart() {
-      const branchSales = {};
-      filteredData.forEach(r => {
-        if (!branchSales[r.Branch]) branchSales[r.Branch] = 0;
-        branchSales[r.Branch] += r.Receipts || 0;
+    function updateBranchComparison() {
+      const branches = [...new Set(filteredData.map(r => r.Branch))];
+      const internalData = branches.map(b => {
+        const branchData = filteredData.filter(r => r.Branch === b);
+        return branchData.reduce((sum, r) => sum + (r['Delivery CARD'] || 0) + (r['Delivery Cash'] || 0), 0);
       });
-
-      const sorted = Object.entries(branchSales).sort((a, b) => b[1] - a[1]).slice(0, 5);
-      const labels = sorted.map(b => b[0].replace('Crispy Chicken', '').trim());
-      const data = sorted.map(b => b[1]);
+      const platformData = branches.map(b => {
+        const branchData = filteredData.filter(r => r.Branch === b);
+        return branchData.reduce((sum, r) => sum + 
+          (r.TALABAT || 0) + (r['NOON CARD'] || 0) + (r['Careem CARD'] || 0) + 
+          (r['SMILES CARD'] || 0) + (r['DELIVERO CARD'] || 0) + (r['Keeta CARD'] || 0), 0);
+      });
 
       if (charts.branchComparison) charts.branchComparison.destroy();
       charts.branchComparison = new Chart(document.getElementById('branchComparisonChart'), {
         type: 'bar',
         data: {
-          labels: labels,
-          datasets: [{
-            label: 'Total Sales',
-            data: data,
-            backgroundColor: '#e63946',
-            borderRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false },
-            tooltip: { callbacks: { label: ctx => formatCurrency(ctx.parsed.y) } }
-          },
-          scales: {
-            y: { ticks: { callback: value => 'AED ' + abbreviateNumber(value) } }
-          }
-        }
-      });
-    }
-
-    function updateMonthlyPerformanceChart() {
-      const monthlyData = {};
-      filteredData.forEach(r => {
-        const key = `${r.Year}-${String(r.Month).padStart(2, '0')}`;
-        if (!monthlyData[key]) monthlyData[key] = { sales: 0, orders: 0 };
-        monthlyData[key].sales += r.Receipts || 0;
-        monthlyData[key].orders += r.Count_Receipts || 0;
-      });
-
-      const sorted = Object.keys(monthlyData).sort();
-      const labels = sorted.map(k => {
-        const [y, m] = k.split('-');
-        return new Date(y, m-1, 1).toLocaleString('default', { month: 'short' });
-      });
-      const sales = sorted.map(k => monthlyData[k].sales);
-      const orders = sorted.map(k => monthlyData[k].orders);
-
-      if (charts.monthlyPerformance) charts.monthlyPerformance.destroy();
-      charts.monthlyPerformance = new Chart(document.getElementById('monthlyPerformanceChart'), {
-        type: 'bar',
-        data: {
-          labels: labels,
+          labels: branches.map(b => b.replace('Crispy Chicken', '').trim() || 'Main'),
           datasets: [
             {
-              label: 'Sales',
-              data: sales,
-              backgroundColor: '#e63946',
-              borderRadius: 6
+              label: 'Internal Delivery',
+              data: internalData,
+              backgroundColor: '#2a9d8f'
             },
             {
-              label: 'Orders',
-              data: orders,
-              backgroundColor: '#2a9d8f',
-              borderRadius: 6
+              label: 'Third-Party Platforms',
+              data: platformData,
+              backgroundColor: '#e63946'
             }
           ]
         },
@@ -1471,124 +1292,164 @@ HEAD,Crispy Chicken-ELctria,10,2025,825525,0,0,23083,276572,192047,134870,96546,
           responsive: true,
           plugins: {
             legend: { position: 'top' },
-            tooltip: { 
-              callbacks: { 
-                label: ctx => {
-                  if (ctx.dataset.label === 'Sales') {
-                    return `Sales: ${formatCurrency(ctx.parsed.y)}`;
-                  } else {
-                    return `Orders: ${ctx.parsed.y.toLocaleString()}`;
-                  }
-                }
-              }
-            }
+            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatCurrency(ctx.parsed.y)}` } }
           },
           scales: {
-            y: { ticks: { callback: value => abbreviateNumber(value) } }
+            x: { stacked: true },
+            y: { 
+              stacked: true, 
+              ticks: { 
+                callback: value => 'AED ' + abbreviateNumber(value),
+                color: document.body.classList.contains('dark-mode') ? '#e2e8f0' : '#333'
+              },
+              grid: {
+                color: document.body.classList.contains('dark-mode') ? '#4a5568' : '#dee2e6'
+              }
+            }
           }
         }
       });
     }
 
-    function initializeDataTables() {
-      // Initialize main data table
-      dataTable = $('#dataTable').DataTable({
-        data: filteredData.map((row, index) => [
-          `<input type="checkbox" class="row-checkbox" data-index="${index}">`,
-          row.Branch?.replace('Crispy Chicken', '').trim() || '',
-          row.Month || '',
-          row.Year || '',
-          formatCurrency(row.Receipts || 0),
-          formatCurrency(row.TALABAT || 0),
-          formatCurrency(row.Cash || 0),
-          formatCurrency(row['Visa Card'] || 0),
-          formatCurrency(row['Master card'] || 0),
-          formatCurrency((row['Delivery CARD'] || 0) + (row['Delivery Cash'] || 0)),
-          formatCurrency((row['ONLINE CASH'] || 0) + (row['ONLINE CARD'] || 0)),
-          `<button class="btn-icon" onclick="editRecord(${index})"><i class="fas fa-edit"></i></button>
-           <button class="btn-icon" onclick="deleteRecord(${index})"><i class="fas fa-trash"></i></button>`
-        ]),
-        columns: [
-          { title: "", orderable: false, className: "text-center" },
-          { title: "Branch" },
-          { title: "Month" },
-          { title: "Year" },
-          { title: "Receipts", className: "text-right" },
-          { title: "Talabat", className: "text-right" },
-          { title: "Cash", className: "text-right" },
-          { title: "Visa", className: "text-right" },
-          { title: "Master", className: "text-right" },
-          { title: "Delivery", className: "text-right" },
-          { title: "Online", className: "text-right" },
-          { title: "Actions", orderable: false, className: "text-center" }
-        ],
-        pageLength: 25,
-        responsive: true,
-        order: [[1, 'asc'], [2, 'asc']]
+    function updateDeliveryTypes() {
+      const internal = filteredData.reduce((sum, r) => sum + (r['Delivery CARD'] || 0) + (r['Delivery Cash'] || 0), 0);
+      const platforms = filteredData.reduce((sum, r) => sum + 
+        (r.TALABAT || 0) + (r['NOON CARD'] || 0) + (r['Careem CARD'] || 0) + 
+        (r['SMILES CARD'] || 0) + (r['DELIVERO CARD'] || 0) + (r['Keeta CARD'] || 0), 0);
+      const total = internal + platforms;
+
+      if (charts.deliveryTypes) charts.deliveryTypes.destroy();
+      charts.deliveryTypes = new Chart(document.getElementById('deliveryTypesChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Internal Delivery', 'Third-Party Platforms'],
+          datasets: [{
+            data: [internal, platforms],
+            backgroundColor: ['#2a9d8f', '#e63946'],
+            borderWidth: 2,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom' },
+            tooltip: { callbacks: { label: ctx => `${ctx.label}: ${formatCurrency(ctx.parsed)}` } }
+          }
+        }
       });
 
-      // Initialize reports table
-      reportsTable = $('#reportsTable').DataTable({
-        pageLength: 10,
-        responsive: true,
-        order: [[2, 'desc']]
+      const tbody = document.querySelector('#deliveryTypesTable tbody');
+      tbody.innerHTML = `
+        <tr><td>Internal</td><td>${formatCurrency(internal)}</td><td>${total > 0 ? (internal / total * 100).toFixed(1) : 0}%</td></tr>
+        <tr><td>Third-Party</td><td>${formatCurrency(platforms)}</td><td>${total > 0 ? (platforms / total * 100).toFixed(1) : 0}%</td></tr>
+      `;
+    }
+
+    function updateMonthlyTrends() {
+      const monthlyData = {};
+      filteredData.forEach(r => {
+        const key = `${r.Year}-${String(r.Month).padStart(2, '0')}`;
+        if (!monthlyData[key]) monthlyData[key] = { sales: 0, internal: 0, platforms: 0 };
+        monthlyData[key].sales += r.Receipts || 0;
+        monthlyData[key].internal += (r['Delivery CARD'] || 0) + (r['Delivery Cash'] || 0);
+        monthlyData[key].platforms += (r.TALABAT || 0) + (r['NOON CARD'] || 0) + (r['Careem CARD'] || 0) + 
+                                      (r['SMILES CARD'] || 0) + (r['DELIVERO CARD'] || 0) + (r['Keeta CARD'] || 0);
       });
 
-      // Select all checkbox functionality
-      document.getElementById('selectAll').addEventListener('change', function() {
-        const checkboxes = document.querySelectorAll('.row-checkbox');
-        checkboxes.forEach(cb => cb.checked = this.checked);
+      const sorted = Object.keys(monthlyData).sort();
+      const labels = sorted.map(k => {
+        const [y, m] = k.split('-');
+        return new Date(y, m-1, 1).toLocaleString('default', { month: 'short', year: 'numeric' });
+      });
+      const sales = sorted.map(k => monthlyData[k].sales);
+      const internal = sorted.map(k => monthlyData[k].internal);
+      const platforms = sorted.map(k => monthlyData[k].platforms);
+
+      if (charts.monthlyTrends) charts.monthlyTrends.destroy();
+      charts.monthlyTrends = new Chart(document.getElementById('monthlyTrendsChart'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Total Sales', data: sales, borderColor: '#1d3557', backgroundColor: 'rgba(29, 53, 87, 0.1)', tension: 0.3 },
+            { label: 'Internal Delivery', data: internal, borderColor: '#2a9d8f', backgroundColor: 'rgba(42, 157, 143, 0.1)', tension: 0.3 },
+            { label: 'Third-Party', data: platforms, borderColor: '#e63946', backgroundColor: 'rgba(230, 57, 70, 0.1)', tension: 0.3 }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatCurrency(ctx.parsed.y)}` } }
+          },
+          scales: {
+            y: { 
+              ticks: { 
+                callback: value => 'AED ' + abbreviateNumber(value),
+                color: document.body.classList.contains('dark-mode') ? '#e2e8f0' : '#333'
+              },
+              grid: {
+                color: document.body.classList.contains('dark-mode') ? '#4a5568' : '#dee2e6'
+              }
+            }
+          }
+        }
       });
     }
 
-    function refreshDataTable() {
-      if (dataTable) {
-        dataTable.clear();
-        dataTable.rows.add(filteredData.map((row, index) => [
-          `<input type="checkbox" class="row-checkbox" data-index="${index}">`,
-          row.Branch?.replace('Crispy Chicken', '').trim() || '',
-          row.Month || '',
-          row.Year || '',
-          formatCurrency(row.Receipts || 0),
-          formatCurrency(row.TALABAT || 0),
-          formatCurrency(row.Cash || 0),
-          formatCurrency(row['Visa Card'] || 0),
-          formatCurrency(row['Master card'] || 0),
-          formatCurrency((row['Delivery CARD'] || 0) + (row['Delivery Cash'] || 0)),
-          formatCurrency((row['ONLINE CASH'] || 0) + (row['ONLINE CARD'] || 0)),
-          `<button class="btn-icon" onclick="editRecord(${index})"><i class="fas fa-edit"></i></button>
-           <button class="btn-icon" onclick="deleteRecord(${index})"><i class="fas fa-trash"></i></button>`
-        ]));
-        dataTable.draw();
-      }
-    }
+    function updateInternalTrends() {
+      const branches = [...new Set(filteredData.map(r => r.Branch))];
+      const monthlyData = {};
 
-    function editRecord(index) {
-      // Implementation for editing a record
-      alert(`Edit record at index ${index}`);
-    }
+      filteredData.forEach(r => {
+        const key = `${r.Year}-${String(r.Month).padStart(2, '0')}`;
+        if (!monthlyData[key]) monthlyData[key] = {};
+        if (!monthlyData[key][r.Branch]) monthlyData[key][r.Branch] = 0;
+        monthlyData[key][r.Branch] += (r['Delivery CARD'] || 0) + (r['Delivery Cash'] || 0);
+      });
 
-    function deleteRecord(index) {
-      if (confirm('Are you sure you want to delete this record?')) {
-        filteredData.splice(index, 1);
-        refreshDataTable();
-        updateDashboard();
-        updateAnalysis();
-      }
-    }
+      const sorted = Object.keys(monthlyData).sort();
+      const labels = sorted.map(k => {
+        const [y, m] = k.split('-');
+        return new Date(y, m-1, 1).toLocaleString('default', { month: 'short', year: 'numeric' });
+      });
 
-    function generateReport() {
-      const reportType = document.getElementById('reportType').value;
-      const dateFrom = document.getElementById('reportDateFrom').value;
-      const dateTo = document.getElementById('reportDateTo').value;
-      const format = document.getElementById('reportFormat').value;
+      const datasets = branches.map((branch, i) => {
+        const color = `hsl(${i * 360 / branches.length}, 70%, 50%)`;
+        return {
+          label: branch.replace('Crispy Chicken', '').trim() || 'Main',
+          data: sorted.map(k => monthlyData[k][branch] || 0),
+          borderColor: color,
+          backgroundColor: color + '20',
+          tension: 0.3,
+          fill: false
+        };
+      });
 
-      showLoading('Generating report...');
-      
-      setTimeout(() => {
-        hideLoading();
-        alert(`Generating ${reportType} report in ${format.toUpperCase()} format from ${dateFrom} to ${dateTo}`);
-      }, 1500);
+      if (charts.internalTrends) charts.internalTrends.destroy();
+      charts.internalTrends = new Chart(document.getElementById('internalTrendsChart'), {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'right', maxWidth: 200 },
+            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatCurrency(ctx.parsed.y)}` } }
+          },
+          scales: {
+            y: { 
+              ticks: { 
+                callback: value => 'AED ' + abbreviateNumber(value),
+                color: document.body.classList.contains('dark-mode') ? '#e2e8f0' : '#333'
+              },
+              grid: {
+                color: document.body.classList.contains('dark-mode') ? '#4a5568' : '#dee2e6'
+              }
+            }
+          }
+        }
+      });
     }
 
     // Utility functions
@@ -1603,8 +1464,8 @@ HEAD,Crispy Chicken-ELctria,10,2025,825525,0,0,23083,276572,192047,134870,96546,
     }
 
     function showLoading(msg) {
-      document.getElementById('loadingMessage').innerHTML = `<i class="fas fa-spinner fa-spin"></i><span>${msg}</span>`;
-      document.getElementById('loadingMessage').style.display = 'flex';
+      document.getElementById('loadingMessage').innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${msg}`;
+      document.getElementById('loadingMessage').style.display = 'block';
     }
 
     function hideLoading() {
@@ -1612,51 +1473,20 @@ HEAD,Crispy Chicken-ELctria,10,2025,825525,0,0,23083,276572,192047,134870,96546,
     }
 
     function showError(msg) {
-      document.getElementById('errorMessage').innerHTML = `<i class="fas fa-exclamation-circle"></i><span>${msg}</span>`;
-      document.getElementById('errorMessage').style.display = 'flex';
+      document.getElementById('errorMessage').textContent = msg;
+      document.getElementById('errorMessage').style.display = 'block';
       setTimeout(() => document.getElementById('errorMessage').style.display = 'none', 5000);
     }
 
     function downloadTemplate() {
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet([
-        ['HEAD*', 'Branch*', 'Month*', 'Year*', 'Receipts*', 'TALABAT', 'TABNA', 'Keeta CARD', 'Cash', 'NOON CARD', 'Master card', 'Visa Card', 'Careem CARD', 'Delivery CARD', 'SMILES CARD', 'Delivery Cash', 'DELIVERO CARD', 'ONLINE CASH', 'ONLINE CARD', 'Count_Receipts', 'Count_TALABAT', 'Count_TABNA', 'Count_Keeta', 'Count_Cash', 'Count_NOON', 'Count_Master', 'Count_Visa', 'Count_Careem', 'Count_DeliveryCard', 'Count_SMILES', 'Count_DeliveryCash', 'Count_DELIVERO', 'Count_ONLINE_Cash', 'Count_ONLINE_Card'],
-        ['HEAD', 'Crispy Chicken-Hamdan St', '1', '2025', '785537.88', '55272.96', '0', '0', '207908.13', '79328.39', '125061.73', '78456.25', '38265.58', '23471.38', '50561', '95829.04', '5482.62', '15755.12', '9790.68', '26775', '1144', '0', '0', '9935', '2238', '4594', '2770', '1167', '449', '1498', '2308', '97', '377', '192']
-      ]);
-      
-      XLSX.utils.book_append_sheet(wb, ws, "Sales Data");
-      XLSX.writeFile(wb, "Sales_Data_Template.xlsx");
-    }
-
-    function exportPDF() {
-      showLoading('Generating PDF report...');
-      setTimeout(() => {
-        hideLoading();
-        alert('PDF report generated successfully!');
-      }, 1500);
-    }
-
-    function exportCSV() {
-      const headers = Object.keys(filteredData[0]);
-      const csvContent = [
-        headers.join(','),
-        ...filteredData.map(row => headers.map(header => row[header]).join(','))
-      ].join('\n');
-      
-      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const csv = sampleData.map(row => row.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'Sales_Data_Report.csv';
+      a.download = 'Sales_Data_Template.xlsx';
       a.click();
       URL.revokeObjectURL(url);
-    }
-
-    function exportExcel() {
-      const ws = XLSX.utils.json_to_sheet(filteredData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Sales Data");
-      XLSX.writeFile(wb, "Sales_Data_Report.xlsx");
     }
   </script>
 </body>
