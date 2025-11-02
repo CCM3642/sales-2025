@@ -1052,12 +1052,22 @@ HEAD,Crispy Chicken Khaldia,2,2025,566345.35,46961,0,0,132388.5,74018.8,84054.2,
 
     function updateSummaryCards() {
       const totalReceipts = filteredData.reduce((sum, r) => sum + (r.Receipts || 0), 0);
+      
+      // Corrected platform sales calculation including all platforms
+      const allPlatformFields = [
+        'TALABAT', 'TABNA', 'Keeta CARD', 'NOON CARD', 
+        'Master card', 'Visa Card', 'Careem CARD', 
+        'SMILES CARD', 'DELIVERO CARD'
+      ];
+      
+      const platforms = filteredData.reduce((sum, r) => {
+        return sum + allPlatformFields.reduce((platformSum, field) => {
+          return platformSum + (r[field] || 0);
+        }, 0);
+      }, 0);
+      
       const internalDelivery = filteredData.reduce((sum, r) => sum + (r['Delivery CARD'] || 0) + (r['Delivery Cash'] || 0), 0);
       const online = filteredData.reduce((sum, r) => sum + (r['ONLINE CASH'] || 0) + (r['ONLINE CARD'] || 0), 0);
-      const platforms = filteredData.reduce((sum, r) => sum + 
-        (r.TALABAT || 0) + (r.TABNA || 0) + (r['Keeta CARD'] || 0) + 
-        (r['NOON CARD'] || 0) + (r['Master card'] || 0) + (r['Visa Card'] || 0) + 
-        (r['Careem CARD'] || 0) + (r['SMILES CARD'] || 0) + (r['DELIVERO CARD'] || 0), 0);
       
       const cardPayments = filteredData.reduce((sum, r) => sum + 
         (r['Visa Card'] || 0) + (r['Master card'] || 0) + (r['NOON CARD'] || 0) + 
@@ -1194,16 +1204,20 @@ HEAD,Crispy Chicken Khaldia,2,2025,566345.35,46961,0,0,132388.5,74018.8,84054.2,
     }
 
     function updatePlatformPerformance() {
-      const platforms = [
+      // All platform fields including Keeta and others
+      const allPlatformFields = [
         { name: 'TALABAT', field: 'TALABAT', count: 'Count_TALABAT' },
+        { name: 'TABNA', field: 'TABNA', count: 'Count_TABNA' },
+        { name: 'Keeta', field: 'Keeta CARD', count: 'Count_Keeta' },
         { name: 'NOON', field: 'NOON CARD', count: 'Count_NOON' },
+        { name: 'Mastercard', field: 'Master card', count: 'Count_Master' },
+        { name: 'Visa', field: 'Visa Card', count: 'Count_Visa' },
         { name: 'Careem', field: 'Careem CARD', count: 'Count_Careem' },
         { name: 'Smiles', field: 'SMILES CARD', count: 'Count_SMILES' },
-        { name: 'Deliveroo', field: 'DELIVERO CARD', count: 'Count_DELIVERO' },
-        { name: 'Keeta', field: 'Keeta CARD', count: 'Count_Keeta' }
+        { name: 'Deliveroo', field: 'DELIVERO CARD', count: 'Count_DELIVERO' }
       ];
 
-      const data = platforms.map(p => ({
+      const data = allPlatformFields.map(p => ({
         name: p.name,
         total: filteredData.reduce((sum, r) => sum + (r[p.field] || 0), 0),
         count: filteredData.reduce((sum, r) => sum + (r[p.count] || 0), 0)
@@ -1223,7 +1237,7 @@ HEAD,Crispy Chicken Khaldia,2,2025,566345.35,46961,0,0,132388.5,74018.8,84054.2,
           labels: data.map(d => d.name),
           datasets: [{
             data: data.map(d => d.total),
-            backgroundColor: ['#e63946', '#2a9d8f', '#f4a261', '#e9c46a', '#457b9d', '#1d3557'],
+            backgroundColor: ['#e63946', '#2a9d8f', '#f4a261', '#e9c46a', '#457b9d', '#1d3557', '#a8dadc', '#457b9d', '#1d3557'],
             borderWidth: 2,
             borderColor: '#fff'
           }]
@@ -1259,15 +1273,26 @@ HEAD,Crispy Chicken Khaldia,2,2025,566345.35,46961,0,0,132388.5,74018.8,84054.2,
 
     function updateBranchComparison() {
       const branches = [...new Set(filteredData.map(r => r.Branch))];
+      
+      // All platform fields for third-party platforms
+      const allPlatformFields = [
+        'TALABAT', 'TABNA', 'Keeta CARD', 'NOON CARD', 
+        'Master card', 'Visa Card', 'Careem CARD', 
+        'SMILES CARD', 'DELIVERO CARD'
+      ];
+      
       const internalData = branches.map(b => {
         const branchData = filteredData.filter(r => r.Branch === b);
         return branchData.reduce((sum, r) => sum + (r['Delivery CARD'] || 0) + (r['Delivery Cash'] || 0), 0);
       });
+      
       const platformData = branches.map(b => {
         const branchData = filteredData.filter(r => r.Branch === b);
-        return branchData.reduce((sum, r) => sum + 
-          (r.TALABAT || 0) + (r['NOON CARD'] || 0) + (r['Careem CARD'] || 0) + 
-          (r['SMILES CARD'] || 0) + (r['DELIVERO CARD'] || 0) + (r['Keeta CARD'] || 0), 0);
+        return branchData.reduce((sum, r) => {
+          return sum + allPlatformFields.reduce((platformSum, field) => {
+            return platformSum + (r[field] || 0);
+          }, 0);
+        }, 0);
       });
 
       if (charts.branchComparison) charts.branchComparison.destroy();
@@ -1313,9 +1338,20 @@ HEAD,Crispy Chicken Khaldia,2,2025,566345.35,46961,0,0,132388.5,74018.8,84054.2,
 
     function updateDeliveryTypes() {
       const internal = filteredData.reduce((sum, r) => sum + (r['Delivery CARD'] || 0) + (r['Delivery Cash'] || 0), 0);
-      const platforms = filteredData.reduce((sum, r) => sum + 
-        (r.TALABAT || 0) + (r['NOON CARD'] || 0) + (r['Careem CARD'] || 0) + 
-        (r['SMILES CARD'] || 0) + (r['DELIVERO CARD'] || 0) + (r['Keeta CARD'] || 0), 0);
+      
+      // All platform fields for third-party platforms
+      const allPlatformFields = [
+        'TALABAT', 'TABNA', 'Keeta CARD', 'NOON CARD', 
+        'Master card', 'Visa Card', 'Careem CARD', 
+        'SMILES CARD', 'DELIVERO CARD'
+      ];
+      
+      const platforms = filteredData.reduce((sum, r) => {
+        return sum + allPlatformFields.reduce((platformSum, field) => {
+          return platformSum + (r[field] || 0);
+        }, 0);
+      }, 0);
+      
       const total = internal + platforms;
 
       if (charts.deliveryTypes) charts.deliveryTypes.destroy();
@@ -1353,8 +1389,17 @@ HEAD,Crispy Chicken Khaldia,2,2025,566345.35,46961,0,0,132388.5,74018.8,84054.2,
         if (!monthlyData[key]) monthlyData[key] = { sales: 0, internal: 0, platforms: 0 };
         monthlyData[key].sales += r.Receipts || 0;
         monthlyData[key].internal += (r['Delivery CARD'] || 0) + (r['Delivery Cash'] || 0);
-        monthlyData[key].platforms += (r.TALABAT || 0) + (r['NOON CARD'] || 0) + (r['Careem CARD'] || 0) + 
-                                      (r['SMILES CARD'] || 0) + (r['DELIVERO CARD'] || 0) + (r['Keeta CARD'] || 0);
+        
+        // All platform fields for third-party platforms
+        const allPlatformFields = [
+          'TALABAT', 'TABNA', 'Keeta CARD', 'NOON CARD', 
+          'Master card', 'Visa Card', 'Careem CARD', 
+          'SMILES CARD', 'DELIVERO CARD'
+        ];
+        
+        monthlyData[key].platforms += allPlatformFields.reduce((sum, field) => {
+          return sum + (r[field] || 0);
+        }, 0);
       });
 
       const sorted = Object.keys(monthlyData).sort();
