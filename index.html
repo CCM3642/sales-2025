@@ -1,0 +1,2438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Crispy Chicken Sales Dashboard</title>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- SheetJS for Excel processing -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Luxon for date handling -->
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- jsPDF for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      --primary: #e63946;
+      --secondary: #1d3557;
+      --light: #f1faee;
+      --dark: #457b9d;
+      --success: #2a9d8f;
+      --warning: #e9c46a;
+      --danger: #f4a261;
+      --card-bg: #ffffff;
+      --border: #dee2e6;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #f8f9fa;
+      color: #333;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      color: var(--secondary);
+      position: relative;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .subtitle {
+      color: #666;
+      font-size: 1rem;
+    }
+
+    /* Data Management Section */
+    .data-management {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 25px;
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .upload-area {
+      flex: 1;
+      min-width: 280px;
+      border: 3px dashed var(--border);
+      border-radius: 12px;
+      padding: 30px;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      background: #f9f9f9;
+    }
+    .upload-area:hover, .upload-area.dragover {
+      border-color: var(--primary);
+      background-color: #fdf2f3;
+      transform: translateY(-2px);
+    }
+    .upload-area i {
+      font-size: 3rem;
+      color: var(--primary);
+      margin-bottom: 15px;
+    }
+    .upload-text {
+      font-weight: 600;
+      color: var(--secondary);
+      font-size: 1.1rem;
+    }
+    .upload-subtext {
+      font-size: 0.9rem;
+      color: #888;
+      margin-top: 8px;
+    }
+    .btn {
+      padding: 12px 22px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+      font-size: 1rem;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 2px 4px rgba(230, 57, 70, 0.3);
+    }
+    .btn-primary:hover {
+      background: #d62839;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(230, 57, 70, 0.4);
+    }
+    .btn-secondary {
+      background: var(--light);
+      color: var(--secondary);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      background: #e6f0e9;
+      transform: translateY(-1px);
+    }
+
+    /* Filters */
+    .filters {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 25px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .filter-group label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--secondary);
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .filter-group select,
+    .filter-group input {
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      background: white;
+      transition: border-color 0.2s;
+    }
+    .filter-group select:focus,
+    .filter-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.1);
+    }
+    .filter-group input[type="date"] {
+      font-family: inherit;
+    }
+
+    /* Summary Cards */
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 5px;
+      height: 100%;
+      background: var(--primary);
+    }
+    .card-title {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--secondary);
+      margin-bottom: 8px;
+    }
+    .card-subtitle {
+      font-size: 0.85rem;
+      color: #888;
+      margin-top: 5px;
+    }
+    .card-icon {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 2.5rem;
+      opacity: 0.1;
+      color: var(--primary);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .tab {
+      padding: 14px 24px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #666;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    .tab:hover:not(.active) {
+      color: var(--secondary);
+      background: rgba(29, 53, 87, 0.05);
+    }
+
+    /* Tab Content */
+    .tab-content {
+      display: none;
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: var(--shadow);
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .chart-container {
+      position: relative;
+      height: 400px;
+      margin-bottom: 25px;
+    }
+    .analysis-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 0.9rem;
+    }
+    .analysis-table th {
+      background: #f4f6f8;
+      text-align: left;
+      padding: 14px;
+      font-weight: 600;
+      color: var(--secondary);
+      border-bottom: 2px solid var(--border);
+    }
+    .analysis-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .analysis-table tr:hover {
+      background: #f8f9fa;
+    }
+
+    /* Grid for Sections */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+      margin-bottom: 30px;
+    }
+    @media (max-width: 992px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      .data-management {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .filters {
+        grid-template-columns: 1fr;
+      }
+      .summary-cards {
+        grid-template-columns: 1fr;
+      }
+      .tabs {
+        justify-content: center;
+      }
+      .chart-container {
+        height: 300px;
+      }
+    }
+
+    /* Loading & Error */
+    .loading, .error {
+      text-align: center;
+      padding: 25px;
+      border-radius: 12px;
+      margin: 20px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+    .loading {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+    .error {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 30px 20px;
+      color: #888;
+      font-size: 0.9rem;
+      margin-top: 50px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* KPI Cards */
+    .kpi-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    .kpi-card {
+      background: linear-gradient(135deg, var(--primary), #d62839);
+      color: white;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      transition: transform 0.3s ease;
+    }
+    .kpi-card:hover {
+      transform: translateY(-5px);
+    }
+    .kpi-title {
+      font-size: 0.9rem;
+      opacity: 0.9;
+      margin-bottom: 10px;
+    }
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    .kpi-change {
+      font-size: 0.85rem;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    /* Data Export */
+    .export-section {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .export-options {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn-export {
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      color: var(--secondary);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-export:hover {
+      background: var(--light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* Branch Performance Cards */
+    .branch-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+    .branch-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .branch-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+    .branch-name {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--secondary);
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .branch-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    .branch-stat {
+      text-align: center;
+    }
+    .branch-stat-label {
+      font-size: 0.8rem;
+      color: #666;
+      margin-bottom: 5px;
+    }
+    .branch-stat-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* Legend for charts */
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+    }
+
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      overflow: auto;
+    }
+    .modal-content {
+      background-color: var(--card-bg);
+      margin: 10% auto;
+      padding: 30px;
+      border-radius: 12px;
+      width: 80%;
+      max-width: 800px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    .close {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #aaa;
+    }
+    .close:hover {
+      color: var(--primary);
+    }
+
+    /* Anomaly Report */
+    .anomaly-report {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: var(--shadow);
+    }
+    .anomaly-report h3 {
+      color: #856404;
+      margin-bottom: 15px;
+    }
+    .anomaly-report ul {
+      list-style-type: none;
+      padding-left: 0;
+    }
+    .anomaly-report li {
+      padding: 10px;
+      margin-bottom: 10px;
+      background: rgba(255, 234, 167, 0.3);
+      border-radius: 6px;
+    }
+
+    /* Pagination */
+    .pagination-container {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+      gap: 5px;
+    }
+    .pagination-container button {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      background: white;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    .pagination-container button:hover {
+      background: var(--light);
+    }
+    .pagination-container button.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* Comparison Badge */
+    .comparison-badge {
+      background: var(--warning);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><i class="fas fa-chart-line"></i> Crispy Chicken Sales Dashboard</h1>
+      <p class="subtitle">Real-time insights into sales, delivery, and payment performance</p>
+    </header>
+
+    <!-- Data Management -->
+    <div class="data-management">
+      <div class="upload-area" id="dropArea">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <div class="upload-text">Drop Excel file here or click to upload</div>
+        <p class="upload-subtext">Supports .xlsx, .xls, .csv files up to 10MB</p>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" hidden />
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <a href="#" class="btn btn-secondary" id="downloadTemplate">
+          <i class="fas fa-download"></i> Download Template
+        </a>
+        <a href="#" class="btn btn-secondary" id="loadSampleData">
+          <i class="fas fa-database"></i> Load Sample Data
+        </a>
+        <a href="#" class="btn btn-secondary" id="detectAnomalies">
+          <i class="fas fa-exclamation-triangle"></i> Detect Anomalies
+        </a>
+      </div>
+    </div>
+
+    <!-- Export Section -->
+    <div class="export-section">
+      <div>
+        <h3 style="margin-bottom: 5px; color: var(--secondary);">Data Export</h3>
+        <p style="color: #666; font-size: 0.9rem;">Export your analysis results</p>
+      </div>
+      <div class="export-options">
+        <button class="btn-export" id="exportPDF">
+          <i class="fas fa-file-pdf"></i> Export PDF Report
+        </button>
+        <button class="btn-export" id="exportCSV">
+          <i class="fas fa-file-csv"></i> Export CSV
+        </button>
+        <button class="btn-export" id="exportCharts">
+          <i class="fas fa-image"></i> Export Charts
+        </button>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <div class="filter-group">
+        <label for="filterMonth"><i class="fas fa-calendar-alt"></i> Month</label>
+        <select id="filterMonth">
+          <option value="">All Months</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="filterYear"><i class="fas fa-calendar"></i> Year</label>
+        <select id="filterYear">
+          <option value="">All Years</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="filterBranch"><i class="fas fa-store"></i> Branch</label>
+        <select id="filterBranch">
+          <option value="">All Branches</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="filterDateFrom"><i class="fas fa-calendar-day"></i> Date From</label>
+        <input type="date" id="filterDateFrom" />
+      </div>
+      <div class="filter-group">
+        <label for="filterDateTo"><i class="fas fa-calendar-day"></i> Date To</label>
+        <input type="date" id="filterDateTo" />
+      </div>
+      <div class="filter-group">
+        <label for="comparePeriod"><i class="fas fa-exchange-alt"></i> Compare With</label>
+        <select id="comparePeriod">
+          <option value="">No Comparison</option>
+          <option value="previousMonth">Previous Month</option>
+          <option value="previousYear">Previous Year</option>
+          <option value="custom">Custom Period</option>
+        </select>
+      </div>
+      <div class="filter-group" style="align-self: end;">
+        <button class="btn btn-primary" id="applyFilters">
+          <i class="fas fa-filter"></i> Apply Filters
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-container">
+      <div class="kpi-card">
+        <div class="kpi-title">Total Sales</div>
+        <div class="kpi-value" id="totalSales">AED 0</div>
+        <div class="kpi-change">
+          <i class="fas fa-arrow-up"></i>
+          <span id="salesChange">12.5% from last period</span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Avg. Order Value</div>
+        <div class="kpi-value" id="avgOrderValue">AED 0</div>
+        <div class="kpi-change">
+          <i class="fas fa-arrow-up"></i>
+          <span id="avgOrderChange">3.2% from last period</span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Total Orders</div>
+        <div class="kpi-value" id="totalOrders">0</div>
+        <div class="kpi-change">
+          <i class="fas fa-arrow-down"></i>
+          <span id="ordersChange">1.2% from last period</span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Conversion Rate</div>
+        <div class="kpi-value" id="conversionRate">0%</div>
+        <div class="kpi-change">
+          <i class="fas fa-arrow-up"></i>
+          <span id="conversionChange">2.8% from last period</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="card">
+        <i class="fas fa-receipt card-icon"></i>
+        <div class="card-title">Total Receipts</div>
+        <div class="card-value" id="totalReceipts">AED 0</div>
+        <div class="card-subtitle">All filtered data</div>
+      </div>
+      <div class="card">
+        <i class="fas fa-truck card-icon"></i>
+        <div class="card-title">Total Delivery</div>
+        <div class="card-value" id="totalDelivery">AED 0</div>
+        <div class="card-subtitle">Internal delivery</div>
+      </div>
+      <div class="card">
+        <i class="fas fa-globe card-icon"></i>
+        <div class="card-title">Total Online</div>
+        <div class="card-value" id="totalOnline">AED 0</div>
+        <div class="card-subtitle">ONLINE CASH + CARD</div>
+      </div>
+      <div class="card">
+        <i class="fas fa-utensils card-icon"></i>
+        <div class="card-title">Total Platforms</div>
+        <div class="card-value" id="totalPlatforms">AED 0</div>
+        <div class="card-subtitle">Third-party platforms</div>
+      </div>
+      <div class="card">
+        <i class="fas fa-credit-card card-icon"></i>
+        <div class="card-title">Card Payments</div>
+        <div class="card-value" id="cardPercentage">0%</div>
+        <div class="card-subtitle">of total receipts</div>
+      </div>
+      <div class="card">
+        <i class="fas fa-money-bill-wave card-icon"></i>
+        <div class="card-title">Cash Payments</div>
+        <div class="card-value" id="cashPercentage">0%</div>
+        <div class="card-subtitle">of total receipts</div>
+      </div>
+    </div>
+
+    <!-- Branch Performance -->
+    <div class="section">
+      <h2 style="margin-bottom: 20px; color: var(--secondary);">Branch Performance</h2>
+      <div class="branch-cards" id="branchCards"></div>
+    </div>
+
+    <!-- Payment Method Analysis -->
+    <div class="section">
+      <h2 style="margin-bottom: 15px; color: var(--secondary);">Payment Method Analysis</h2>
+      <div class="tabs">
+        <div class="tab active" data-tab="visa-master">
+          <i class="fas fa-credit-card"></i> Visa vs Mastercard
+        </div>
+        <div class="tab" data-tab="cash-card">
+          <i class="fas fa-money-bill-wave"></i> Cash vs Card
+        </div>
+        <div class="tab" data-tab="platform-perf">
+          <i class="fas fa-store"></i> Platform Performance
+        </div>
+        <div class="tab" data-tab="payment-trends">
+          <i class="fas fa-chart-line"></i> Payment Trends
+        </div>
+      </div>
+
+      <!-- Visa vs Mastercard -->
+      <div class="tab-content active" id="visa-master">
+        <div class="dashboard-grid">
+          <div>
+            <div class="chart-container">
+              <canvas id="visaMasterChart"></canvas>
+            </div>
+            <div class="chart-legend" id="visaMasterLegend"></div>
+          </div>
+          <div>
+            <table class="analysis-table" id="visaMasterTable">
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Total (AED)</th>
+                  <th>Transactions</th>
+                  <th>Avg (AED)</th>
+                  <th>Share</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cash vs Card -->
+      <div class="tab-content" id="cash-card">
+        <div class="dashboard-grid">
+          <div>
+            <div class="chart-container">
+              <canvas id="cashCardChart"></canvas>
+            </div>
+            <div class="chart-legend" id="cashCardLegend"></div>
+          </div>
+          <div>
+            <table class="analysis-table" id="cashCardTable">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Total (AED)</th>
+                  <th>Transactions</th>
+                  <th>Percentage</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Platform Performance -->
+      <div class="tab-content" id="platform-perf">
+        <div class="dashboard-grid">
+          <div>
+            <div class="chart-container">
+              <canvas id="platformPieChart"></canvas>
+            </div>
+            <div class="chart-legend" id="platformLegend"></div>
+          </div>
+          <div>
+            <table class="analysis-table" id="platformTable">
+              <thead>
+                <tr>
+                  <th>Platform</th>
+                  <th>Total (AED)</th>
+                  <th>Transactions</th>
+                  <th>Avg (AED)</th>
+                  <th>Share</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Trends -->
+      <div class="tab-content" id="payment-trends">
+        <div class="chart-container" style="height: 500px;">
+          <canvas id="paymentTrendsChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delivery Performance -->
+    <div class="section" style="margin-top: 40px;">
+      <h2 style="margin-bottom: 15px; color: var(--secondary);">Delivery Performance</h2>
+      <div class="tabs">
+        <div class="tab active" data-tab="branch-comp">
+          <i class="fas fa-store"></i> Branch Comparison
+        </div>
+        <div class="tab" data-tab="delivery-types">
+          <i class="fas fa-truck"></i> Delivery Types
+        </div>
+        <div class="tab" data-tab="monthly-trends">
+          <i class="fas fa-calendar-alt"></i> Monthly Trends
+        </div>
+        <div class="tab" data-tab="internal-trends">
+          <i class="fas fa-chart-line"></i> Internal Delivery Trends
+        </div>
+        <div class="tab" data-tab="delivery-efficiency">
+          <i class="fas fa-tachometer-alt"></i> Delivery Efficiency
+        </div>
+      </div>
+
+      <!-- Branch Comparison -->
+      <div class="tab-content active" id="branch-comp">
+        <div class="chart-container" style="height: 450px;">
+          <canvas id="branchComparisonChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Delivery Types -->
+      <div class="tab-content" id="delivery-types">
+        <div class="dashboard-grid">
+          <div>
+            <div class="chart-container">
+              <canvas id="deliveryTypesChart"></canvas>
+            </div>
+            <div class="chart-legend" id="deliveryLegend"></div>
+          </div>
+          <div>
+            <table class="analysis-table" id="deliveryTypesTable">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Total (AED)</th>
+                  <th>Percentage</th>
+                  <th>Transactions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly Trends -->
+      <div class="tab-content" id="monthly-trends">
+        <div class="chart-container" style="height: 450px;">
+          <canvas id="monthlyTrendsChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Internal Delivery Trends -->
+      <div class="tab-content" id="internal-trends">
+        <div class="chart-container" style="height: 450px;">
+          <canvas id="internalTrendsChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Delivery Efficiency -->
+      <div class="tab-content" id="delivery-efficiency">
+        <div class="dashboard-grid">
+          <div>
+            <div class="chart-container">
+              <canvas id="deliveryEfficiencyChart"></canvas>
+            </div>
+          </div>
+          <div>
+            <table class="analysis-table" id="deliveryEfficiencyTable">
+              <thead>
+                <tr>
+                  <th>Branch</th>
+                  <th>Delivery Orders</th>
+                  <th>Delivery Revenue</th>
+                  <th>Avg Order Value</th>
+                  <th>Efficiency Score</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination Container -->
+    <div class="pagination-container" id="paginationContainer"></div>
+
+    <div id="loadingMessage" class="loading" style="display: none;">
+      <i class="fas fa-spinner fa-spin"></i>
+      <span>Processing data...</span>
+    </div>
+    <div id="errorMessage" class="error" style="display: none;">
+      <i class="fas fa-exclamation-circle"></i>
+      <span></span>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="detailModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2 id="modalTitle">Detail Information</h2>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2025 Crispy Chicken Analytics | Data updated: <span id="lastUpdated">Never</span></p>
+  </footer>
+
+  <script>
+    // Global variables
+    let rawData = [];
+    let filteredData = [];
+    let comparisonData = [];
+    let charts = {};
+    let currentPage = 1;
+    const pageSize = 100;
+
+    // Sample data from the provided document
+    const sampleData = `HEAD,HEAD*,Branch*,Month*,Year*,Receipts*,TALABAT,TABNA,Keeta CARD,Cash,NOON CARD,Master card,Visa Card,Careem CARD,Delivery CARD,SMILES CARD,Delivery Cash,DELIVERO CARD,ONLINE CASH,ONLINE CARD,Count_Receipts,Count_TALABAT,Count_TABNA,Count_Keeta,Count_Cash,Count_NOON,Count_Master,Count_Visa,Count_Careem,Count_DeliveryCard,Count_SMILES,Count_DeliveryCash,Count_DELIVERO,Count_ONLINE_Cash,Count_ONLINE_Card
+HEAD,Crispy Chicken-Hamdan St,1,2025,785537.88,55272.96,0,0,207908.13,79328.39,125061.73,78456.25,38265.58,23471.38,50561,95829.04,5482.62,15755.12,9790.68,26775,1144,0,0,9935,2238,4594,2770,1167,449,1498,2308,97,377,192
+HEAD,Crispy Chicken Khaldia,1,2025,584685.4,62454.93,92.59,0,139821,67034.34,88632.53,73895.9,25667.99,13905.94,44374.88,46454.41,8601.88,9089.81,4659.2,19523,1217,2,0,6647,1897,3458,2477,812,249,1343,992,137,202,90
+HEAD,Crispy Chicken Shabiya 11,1,2025,630955.6,35802.49,75,0,167078.54,79487.04,102733.74,69778.54,34104.18,18043.94,77531.22,34733.77,4263.98,4779.37,2618.79,21470,705,2,0,7395,2215,3814,2436,1074,366,2399,835,54,119,58
+HEAD,Crispy Chicken Muroor,1,2025,527597.59,48211.79,35,0,120193.1,50495.26,83440.34,85619.29,32059.59,23144.36,40854.29,36604.32,3547.86,1861.7,1490.69,17770,969,1,0,5888,1452,2990,2820,963,467,1294,788,65,41,31
+HEAD,Crispy Chicken Al Barsha,1,2025,611173.74,38175.48,0,0,178819.55,66462.64,73224.5,84120.81,49244.9,27673.05,50254.01,28078.99,6794.63,5677.37,2647.81,24058,839,0,0,8938,1902,3357,3712,1652,854,1657,872,119,113,43
+HEAD,Crispy Chicken Al Satwa,1,2025,385718.26,28527.83,0,0,124512.61,71302.62,34050.62,34706.38,31417.87,6986.61,25312.49,19861.9,1432.48,5835.16,1736.69,14065,632,0,0,5698,2076,1352,1314,1103,171,837,647,24,167,43
+HEAD,Crispy Chicken Al Rgga,1,2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+HEAD,Crispy Chicken-ELctria,1,2025,740083.76,52228.79,0,0,300244.92,91589.3,150467.4,81937.11,27260.97,0,36355.27,0,0,0,0,30341,1041,0,0,15547,2623,6077,3164,867,0,1022,0,139,0,0
+HEAD,Crispy Chicken-Hamdan St,2,2025,742068.15,55021,0,0,183743.1,71094.5,107837.1,70459.9,39408.15,21608.3,67595.7,89937.3,5805.2,17714.4,10974.5,25749,1176,0,0,8862,2008,4155,2443,1091,424,2746,2036,0,417,227
+HEAD,Crispy Chicken Khaldia,2,2025,566345.35,46961,0,0,132388.5,74018.8,84054.2,68511.6,38073.4,13376.8,47101.9,38340.9,0,9389.9,5271.9,18616,962,0,0,6357,2007,3228,2175,654,234,1685,820,189,206,99
+HEAD,Crispy Chicken Shabiya 11,2,2025,614655,37355,0,0,156116,96768,92407,63840,26731,17188,81636,33918,8856,3616,2724,21387,788,0,0,6899,2546,3508,2128,1046,355,3167,781,26,86,57
+HEAD,Crispy Chicken Muroor,2,2025,501652,37739,0,0,117648,54019,81050,78334,24873,21538,40538,36899,2358,1583,2356,17373,828,0,0,5743,1432,2980,2627,917,435,1457,764,116,33,41
+HEAD,Crispy Chicken Al Barsha,2,2025,610930,37097,0,0,173216,76303,73591,82166,42035,24826,55001,26874,5075,6423,2554,23744,905,0,0,8386,2101,3275,3655,1511,708,1990,819,196,132,46
+HEAD,Crispy Chicken Al Satwa,2,2025,426647,26463,0,0,129080,75702,34280,35911,30554,5245,59401,19104,10135,7295,2684,15427,676,0,0,5885,2121,1351,1349,1155,140,1915,579,15,185,55
+HEAD,Crispy Chicken Al Rgga,2,2025,0,0,0,0,0,0,0,0,0,0,0,0,905,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+HEAD,Crispy Chicken-ELctria,2,2025,710820,42288,0,0,287078,81781,135760,74742,52610,0,36562,0,0,0,0,28535,945,0,0,14484,2269,5597,2907,923,0,1410,0,*,0,0
+HEAD,Crispy Chicken-Hamdan St,3,2025,603475,58532,0,0,155789,57141,93313,59885,39450,29185,22783,58598,4832,15535,8433,19852,1258,0,0,7130,1508,3590,2115,1198,576,591,1301,92,342,151
+HEAD,Crispy Chicken Khaldia,3,2025,458232,47596,0,0,111460,57406,74431,58843,28444,14203,13248,30418,9539,8569,4075,14684,1071,0,0,5171,1467,2755,1856,757,257,346,634,172,143,55
+HEAD,Crispy Chicken Shabiya 11,3,2025,449434,40882,0,0,118003,65578,80476,50587,27249,15451,20465,24822,2639,1485,1797,15249,879,0,0,5372,1614,3069,1824,918,328,558,578,35,40,34
+HEAD,Crispy Chicken Muroor,3,2025,347325,38980,0,0,72516,38501,58234,56915,24282,17654,9538,24154,2721,2899,932,11328,824,0,0,3642,981,2112,1937,647,343,233,474,68,49,18
+HEAD,Crispy Chicken Al Barsha,3,2025,475552,38379,0,0,149371,48279,65862,70819,35824,21621,13662,20454,6466,3368,1448,18794,937,0,0,7237,1261,3014,3122,1191,745,399,682,108,70,28
+HEAD,Crispy Chicken Al Satwa,3,2025,316798,31064,0,0,108133,41738,33591,32194,27879,6556,13671,15378,763,4200,1632,11430,742,0,0,5047,1085,1269,1198,922,165,373,480,15,100,34
+HEAD,Crispy Chicken Al Rgga,3,2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+HEAD,Crispy Chicken-ELctria,3,2025,605099,54285,0,*,243126,72104,127753,66548,27856,0,13426,0,0,0,0,24038,1215,0,0,12074,1960,5149,2563,734,0,343,0,0,0,0
+HEAD,Crispy Chicken-Hamdan St,4,2025,713033,54117,0,0,186015,76678,108985,81529,33316,30359,29152,76266,1355,22847,12414,23797,1283,0,0,8824,2094,4173,2780,774,614,726,1749,30,500,250
+HEAD,Crispy Chicken Khaldia,4,2025,568123,66908,0,0,141795,70411,96104,75239,24688,15049,14043,39737,7781,10360,6011,18743,1583,0,0,6607,1909,3610,2571,528,313,313,843,154,216,96
+HEAD,Crispy Chicken Shabiya 11,4,2025,638250,58114,0,0,170359,91722,113050,76809,27219,17558,29282,39223,2709,7010,4995,20572,1268,0,0,7450,2396,3973,2571,698,361,695,885,30,148,97
+HEAD,Crispy Chicken Muroor,4,2025,526701,58756,0,0,117086,59499,94170,94127,23090,17654,13822,39141,3254,3477,2626,17251,1332,0,0,5759,1568,3301,3085,504,350,321,861,57,68,45
+HEAD,Crispy Chicken Al Barsha,4,2025,587672,56933,0,0,172377,69636,72509,85776,35818,28897,17572,32525,5984,6924,2723,22717,1466,0,0,8636,1861,3373,3863,923,927,488,889,110,134,47
+HEAD,Crispy Chicken Al Satwa,4,2025,401400,46662,0,0,136611,55635,37768,43046,25926,7003,14256,22151,834,9114,2395,14139,1189,0,0,6186,1539,1451,1591,650,222,348,659,21,220,63
+HEAD,Crispy Chicken Al Rgga,4,2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+HEAD,Crispy Chicken-ELctria,4,2025,725004,85789,0,0,285810,79148,144394,83074,29679,0,17109,0,0,0,0,28496,2045,0,0,14226,2248,5717,3179,685,0,396,0,0,0,0
+HEAD,Crispy Chicken-Hamdan St,5,2025,779896,78502,0,0,179545,67466,105429,87058,76728,42337,29013,74728,0,23807,15283,26810,2006,0,0,8747,1726,4089,3045,2496,822,1281,1693,0,599,306
+HEAD,Crispy Chicken Khaldia,5,2025,636993,101706,0,0,133816,55736,92046,77474,65816,18712,24937,35898,10535,12771,7547,21403,2479,0,0,6398,1401,3601,2682,1989,351,1104,732,227,296,143
+HEAD,Crispy Chicken Shabiya 11,5,2025,690026,82371,0,0,162737,81939,103721,74483,66268,24338,45809,32365,2950,9288,3757,23546,1992,0,0,7272,1935,3805,2471,2125,472,2416,715,35,229,79
+HEAD,Crispy Chicken Muroor,5,2025,537998,72218,0,0,114084,41839,90525,91953,45571,21529,17892,32773,3176,4181,2257,18430,1768,0,0,5778,1032,3236,3130,1448,415,753,679,60,90,41
+HEAD,Crispy Chicken Al Barsha,5,2025,629875,89097,0,0,174601,60410,78602,97187,51858,15438,25703,21551,6389,6703,2336,24979,2413,0,0,9058,1505,3491,4270,1783,377,1294,504,108,134,42
+HEAD,Crispy Chicken Al Satwa,5,2025,467366,85653,0,0,145734,55119,42166,46452,37543,4926,19178,15705,1504,10683,2705,16409,2333,0,0,6479,1377,1615,1700,1333,119,682,387,36,274,74
+HEAD,Crispy Chicken Al Rgga,5,2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+HEAD,Crispy Chicken-ELctria,5,2025,805574,105622,0,*,279069,70771,147053,90211,83506,0,29343,0,0,0,0,31864,2717,0,0,13999,1876,5927,3466,2468,0,1411,0,0,0,0
+HEAD,Crispy Chicken-Hamdan St,6,2025,802423,70292,0,0,167802,70183,95082,80224,132121,48376,42430,57853,0,24627,13433,26357,1488,0,0,7747,1805,3574,2765,3986,943,1874,1375,0,545,255
+HEAD,Crispy Chicken Khaldia,6,2025,673052,110787,0,0,125489,65632,76391,67506,107790,25847,30508,31013,12987,13310,5792,21006,2258,0,0,5692,1635,2830,2274,3208,449,1330,629,324,268,109
+HEAD,Crispy Chicken Shabiya 11,6,2025,709111,81004,0,0,150377,91791,84279,65831,97073,25525,64348,29086,4447,11083,4267,22937,1697,0,0,6385,2177,3121,2154,2869,490,3039,624,75,227,79
+HEAD,Crispy Chicken Muroor,6,2025,572961,75585,0,0,103700,47024,78331,83033,95629,24271,23823,31775,3190,4296,2304,18287,1560,0,0,4979,1165,2733,2748,2864,455,980,621,62,91,29
+HEAD,Crispy Chicken Al Barsha,6,2025,664194,82159,0,0,165442,74703,69534,89734,91895,19547,36868,21890,4546,5948,1929,24731,1869,0,0,8348,1889,3080,3981,2660,439,1765,452,87,123,38
+HEAD,Crispy Chicken Al Satwa,6,2025,509383,78146,0,0,145487,68818,38024,46192,71964,6535,24912,14470,1021,10675,3140,16685,1759,0,0,6172,1774,1389,1669,2098,154,997,309,21,268,75
+HEAD,Crispy Chicken Al Rgga,6,2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+HEAD,Crispy Chicken-ELctria,6,2025,835561,77935,0,0,276155,81448,128718,81217,149331,0,40759,0,0,0,0,31156,1685,0,0,12991,2142,4959,3003,4565,0,1811,0,0,0,0
+HEAD,Crispy Chicken-Hamdan St,7,2025,777059,66926,0,0,172422,89252,99074,79656,92368,51512,26574,57693,0,26365,15218,26169,1591,0,0,8455,2336,4052,2900,2370,1151,901,1406,0,682,325
+HEAD,Crispy Chicken Khaldia,7,2025,694472,117570,0,0,127529,119262,77362,65523,80289,24510,19850,27107,17704,11913,5853,22152,2681,0,0,6279,3033,3060,2411,2025,501,675,596,465,297,129
+HEAD,Crispy Chicken Shabiya 11,7,2025,741668,69782,0,0,152950,182336,93975,65938,66698,23603,35455,31557,2465,12399,4511,23241,1578,0,0,6871,4241,3565,2355,1699,517,1321,660,30,312,92
+HEAD,Crispy Chicken Muroor,7,2025,564894,65617,0,0,104652,84981,80619,85486,63692,26768,17051,26233,3669,4193,1934,18295,1521,0,0,5239,2149,2930,2887,1653,550,594,564,83,95,30
+HEAD,Crispy Chicken Al Barsha,7,2025,618162,54250,0,0,160480,108752,67286,93884,47575,23715,27647,20912,5208,5862,2591,23642,1303,0,0,8525,2735,3131,4265,1288,521,1091,486,124,124,49
+HEAD,Crispy Chicken Al Satwa,7,2025,522714,53308,0,0,152499,112494,42893,56616,39813,8327,20813,16358,1510,13781,4302,17692,1275,0,0,6968,2870,1619,2027,1101,184,794,344,26,376,108
+HEAD,Crispy Chicken Al Rgga,7,2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+HEAD,Crispy Chicken-ELctria,7,2025,857463,106326,0,*,270914,141613,123621,85049,104305,0,25636,0,0,0,0,31963,2537,0,0,13510,3788,5195,3357,2692,0,884,0,0,0,0
+HEAD,Crispy Chicken-Hamdan St,8,2025,755185,34146,0,0,153604,82445,90103,72028,169359,55025,15481,48160,0,23005,11830,25560,773,0,0,7589,2245,3613,2556,5174,1139,592,1108,0,551,220
+HEAD,Crispy Chicken Khaldia,8,2025,637005,85718,0,0,105227,84210,70392,61783,138503,27760,10877,23280,11894,11874,5488,20366,1868,0,0,5043,2209,2721,2215,4171,511,407,521,335,252,113
+HEAD,Crispy Chicken Shabiya 11,8,2025,694108,49748,0,0,142059,120862,86039,65923,138678,30475,21513,24861,1383,9287,3281,22402,1069,0,0,6426,2894,3211,2342,4088,606,929,556,21,190,70
+HEAD,Crispy Chicken Muroor,8,2025,516549,47553,0,0,97706,62998,72921,80103,94396,23239,8410,21123,2217,3830,2054,16968,1015,0,0,4790,1625,2651,2710,2813,492,297,420,39,80,36
+HEAD,Crispy Chicken Al Barsha,8,2025,648694,52223,0,0,156793,88139,67636,89041,118072,24316,12843,24980,7248,4831,2573,23814,1208,0,0,7983,2267,2987,3984,3639,498,531,403,155,109,50
+HEAD,Crispy Chicken Al Satwa,8,2025,532037,47974,0,0,140287,99441,40174,50753,105013,8770,9176,13706,1840,11338,3565,17853,1155,0,0,6294,2562,1490,1845,3254,178,322,314,52,287,100
+HEAD,Crispy Chicken Al Rgga,8,2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+HEAD,Crispy Chicken-ELctria,8,2025,805213,71230,0,0,248702,100729,117441,81469,174851,0,10792,0,0,0,0,30581,1706,0,0,12414,2751,4762,3138,5390,0,420,0,0,0,0
+HEAD,Crispy Chicken-Hamdan St,9,2025,722127,0,0,0,156498,121183,90564,73916,96353,58981,35906,47581,0,25945,15201,24619,0,0,0,7519,3553,3600,2753,2674,1234,1286,1111,0,602,287
+HEAD,Crispy Chicken Khaldia,9,2025,571512,0,0,0,114135,118512,73709,62959,81101,29907,27564,27863,19269,9427,7068,19137,0,0,0,5554,3300,2890,2280,2218,581,949,563,486,194,122
+HEAD,Crispy Chicken Shabiya 11,9,2025,669003,0,0,0,137533,171659,86173,67247,80977,33671,52701,27619,1004,6870,3550,21870,0,0,0,6169,4558,3150,2314,2267,656,1914,613,13,157,59
+HEAD,Crispy Chicken Muroor,9,2025,493891,0,0,0,107633,89313,78435,77197,57361,25414,21535,25604,4731,4368,2300,16509,0,0,0,5077,2468,2844,2671,1568,516,707,457,82,87,32
+HEAD,Crispy Chicken Al Barsha,9,2025,629720,0,0,15675,158981,143838,64293,87490,74320,22251,25438,21110,7835,5656,2834,23756,0,0,209,7945,3922,2859,3898,2027,464,1703,415,147,107,60
+HEAD,Crispy Chicken Al Satwa,9,2025,557244,0,0,16425,146964,163810,40365,52771,63710,8561,33052,14505,1850,11576,3656,19546,0,0,235,6658,4648,1565,1957,1783,189,1781,306,48,285,91
+HEAD,Crispy Chicken Al Rgga,9,2025,76198,0,0,4506,31690,957,14339,20902,559,317,1252,1676,0,0,0,3680,0,0,77,1789,24,701,960,12,5,72,40,0,0,0
+HEAD,Crispy Chicken-ELctria,9,2025,727587,0,0,0,249546,139599,122085,85521,99607,0,31229,0,0,0,0,28364,0,0,0,12162,4064,4951,3296,2824,0,1067,0,0,0,0
+HEAD,Crispy Chicken-Hamdan St,10,2025,763733,0,0,22559,162449,166804,97561,81148,69649,58669,27576,44898,25,21848,10547,25438,0,0,422,7769,5322,3745,2929,1665,1159,732,1006,1,473,215
+HEAD,Crispy Chicken Khaldia,10,2025,649242,0,0,21671,120480,154665,82430,74845,59465,34178,25588,27116,30989,10075,7741,21131,0,0,422,5756,4715,3230,2673,1367,627,643,537,807,215,139
+HEAD,Crispy Chicken Shabiya 11,10,2025,744779,0,0,29489,146400,233078,89193,66144,66152,30475,40811,27482,3848,8216,3492,23560,0,0,549,6418,6833,3312,2370,1505,635,1040,590,54,187,67
+HEAD,Crispy Chicken Muroor,10,2025,536168,0,0,18125,107685,113348,83137,86209,44178,31844,19074,18651,8483,3904,1531,17785,0,0,355,5224,3465,2980,2979,1027,587,496,386,197,64,25
+HEAD,Crispy Chicken Al Barsha,10,2025,781436,0,0,167922,159604,184973,64795,85309,40084,20929,16125,23890,10398,6119,1287,26087,0,0,3337,8063,5237,3018,3826,987,444,475,406,172,98,24
+HEAD,Crispy Chicken Al Satwa,10,2025,655294,0,0,168826,153982,172459,43650,55354,22141,4026,12204,8747,2723,9092,2091,20525,0,0,3361,6761,5093,1759,2006,549,94,357,199,58,239,49
+HEAD,Crispy Chicken Al Rgga,10,2025,773870,0,0,282732,174333,119856,68382,98023,5697,6837,7261,7798,876,1747,329,25777,0,0,5827,8364,3914,2853,4054,143,156,200,176,28,53,9
+HEAD,Crispy Chicken-ELctria,10,2025,825525,0,0,23083,276572,192047,134870,96546,75943,0,26464,0,0,0,0,31776,0,0,464,13436,6326,5343,3726,1807,0,674,0,0,0,0`;
+
+    // Initialize with sample data
+    document.addEventListener('DOMContentLoaded', () => {
+      processExcelData(sampleData);
+      setupEventListeners();
+      populateFilters();
+      updateDashboard();
+      document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+      setupModal();
+    });
+
+    // Setup event listeners
+    function setupEventListeners() {
+      const dropArea = document.getElementById('dropArea');
+      const fileInput = document.getElementById('fileInput');
+
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+      });
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => dropArea.classList.add('dragover'), false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => dropArea.classList.remove('dragover'), false);
+      });
+
+      dropArea.addEventListener('drop', handleDrop, false);
+      dropArea.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+
+      document.getElementById('applyFilters').addEventListener('click', applyFilters);
+      document.getElementById('downloadTemplate').addEventListener('click', downloadTemplate);
+      document.getElementById('loadSampleData').addEventListener('click', loadSampleData);
+      document.getElementById('exportPDF').addEventListener('click', exportPDF);
+      document.getElementById('exportCSV').addEventListener('click', exportCSV);
+      document.getElementById('exportCharts').addEventListener('click', exportCharts);
+      document.getElementById('detectAnomalies').addEventListener('click', detectAnomalies);
+      document.getElementById('comparePeriod').addEventListener('change', processComparisonData);
+
+      // Tab switching
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const parent = tab.closest('.tabs').parentElement;
+          parent.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          parent.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          tab.classList.add('active');
+          document.getElementById(tab.dataset.tab).classList.add('active');
+        });
+      });
+    }
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    function handleDrop(e) {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files.length > 0) handleFile(files[0]);
+    }
+
+    function handleFile(file) {
+      if (!file) return;
+      
+      // Enhanced file type validation
+      const validTypes = ['.xlsx', '.xls', '.csv'];
+      const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+      
+      if (!validTypes.includes(fileExtension)) {
+        showError(`Please upload a valid file (${validTypes.join(', ')})`);
+        return;
+      }
+      
+      if (file.size > 10 * 1024 * 1024) {
+        showError('File size must be under 10MB.');
+        return;
+      }
+
+      showLoading('Reading file...');
+      const reader = new FileReader();
+      
+      reader.onload = function(e) {
+        try {
+          let data;
+          
+          if (fileExtension === '.csv') {
+            const csv = e.target.result;
+            data = csv.split('\n').map(row => row.split(','));
+          } else {
+            // Handle Excel files
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const csv = XLSX.utils.sheet_to_csv(sheet);
+            data = csv.split('\n').map(row => row.split(','));
+          }
+          
+          // Validate data
+          if (!validateAndCleanData(data)) {
+            return;
+          }
+          
+          processExcelData(data);
+          showLoading('Processing data...');
+          setTimeout(() => {
+            hideLoading();
+            populateFilters();
+            applyFilters();
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+          }, 300);
+        } catch (err) {
+          showError('Failed to process file: ' + err.message);
+          hideLoading();
+        }
+      };
+      
+      if (fileExtension === '.csv') {
+        reader.readAsText(file);
+      } else {
+        reader.readAsArrayBuffer(file);
+      }
+    }
+
+    function validateAndCleanData(data) {
+      if (data.length < 2) {
+        showError('File is empty or invalid');
+        return false;
+      }
+      
+      // Check for required fields
+      const headers = data[0].map(h => h.replace(/\*$/g, '').trim());
+      const requiredFields = ['Branch', 'Month', 'Year', 'Receipts'];
+      const missingFields = requiredFields.filter(field => !headers.includes(field));
+      
+      if (missingFields.length > 0) {
+        showError(`Missing required fields: ${missingFields.join(', ')}`);
+        return false;
+      }
+      
+      return true;
+    }
+
+    function loadSampleData() {
+      processExcelData(sampleData);
+      populateFilters();
+      applyFilters();
+      document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+    }
+
+    function processExcelData(rows) {
+      if (rows.length < 2) return;
+      const headers = rows[0].map(h => h.replace(/\*$/g, '').trim());
+      rawData = rows.slice(1).map(row => {
+        const obj = {};
+        headers.forEach((h, i) => {
+          let val = row[i] ? row[i].trim() : '';
+          if (!isNaN(val) && val !== '') {
+            obj[h] = parseFloat(val);
+          } else {
+            obj[h] = val;
+          }
+        });
+        // Create date from Month and Year
+        if (obj.Month && obj.Year) {
+          obj.Date = new Date(obj.Year, obj.Month - 1, 1);
+        }
+        return obj;
+      }).filter(row => row.Branch && row.Branch.includes('Crispy Chicken') && row.Receipts > 0);
+      filteredData = [...rawData];
+      
+      // Reset pagination
+      currentPage = 1;
+      updatePagination();
+    }
+
+    function populateFilters() {
+      const months = [...new Set(rawData.map(r => r.Month))].sort((a,b) => a-b);
+      const years = [...new Set(rawData.map(r => r.Year))].sort((a,b) => a-b);
+      const branches = [...new Set(rawData.map(r => r.Branch))].sort();
+
+      const monthSelect = document.getElementById('filterMonth');
+      monthSelect.innerHTML = '<option value="">All Months</option>';
+      months.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = new Date(2025, m-1, 1).toLocaleString('default', { month: 'long' });
+        monthSelect.appendChild(opt);
+      });
+
+      const yearSelect = document.getElementById('filterYear');
+      yearSelect.innerHTML = '<option value="">All Years</option>';
+      years.forEach(y => {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+      });
+
+      const branchSelect = document.getElementById('filterBranch');
+      branchSelect.innerHTML = '<option value="">All Branches</option>';
+      branches.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b;
+        opt.textContent = b.replace('Crispy Chicken', '').trim() || 'Main';
+        branchSelect.appendChild(opt);
+      });
+    }
+
+    function applyFilters() {
+      const month = document.getElementById('filterMonth').value;
+      const year = document.getElementById('filterYear').value;
+      const branch = document.getElementById('filterBranch').value;
+      const from = document.getElementById('filterDateFrom').value;
+      const to = document.getElementById('filterDateTo').value;
+
+      filteredData = rawData.filter(row => {
+        if (month && row.Month != month) return false;
+        if (year && row.Year != year) return false;
+        if (branch && row.Branch !== branch) return false;
+        if (from) {
+          const rowDate = new Date(row.Year, row.Month - 1, 1);
+          const fromDate = new Date(from);
+          if (rowDate < fromDate) return false;
+        }
+        if (to) {
+          const rowDate = new Date(row.Year, row.Month - 1, 1);
+          const toDate = new Date(to);
+          toDate.setMonth(toDate.getMonth() + 1);
+          if (rowDate >= toDate) return false;
+        }
+        return true;
+      });
+
+      // Reset pagination
+      currentPage = 1;
+      updatePagination();
+      
+      // Process comparison if selected
+      processComparisonData();
+      
+      updateDashboard();
+    }
+
+    function processComparisonData() {
+      const compareOption = document.getElementById('comparePeriod').value;
+      if (!compareOption) {
+        comparisonData = [];
+        return;
+      }
+      
+      let comparisonData = [];
+      
+      switch(compareOption) {
+        case 'previousMonth':
+          comparisonData = getPreviousMonthData();
+          break;
+        case 'previousYear':
+          comparisonData = getPreviousYearData();
+          break;
+        case 'custom':
+          // Show custom date selector
+          showCustomDateSelector();
+          break;
+      }
+      
+      // Update KPIs with comparison
+      updateKPIsWithComparison(comparisonData);
+    }
+
+    function getPreviousMonthData() {
+      // Get the current filter settings
+      const month = document.getElementById('filterMonth').value;
+      const year = document.getElementById('filterYear').value;
+      const branch = document.getElementById('filterBranch').value;
+      
+      let prevMonth = month ? parseInt(month) - 1 : 12;
+      let prevYear = year ? parseInt(year) : (month ? parseInt(year) : parseInt(year) - 1);
+      
+      if (prevMonth < 1) {
+        prevMonth = 12;
+        prevYear--;
+      }
+      
+      return rawData.filter(row => {
+        if (month && row.Month != prevMonth) return false;
+        if (year && row.Year != prevYear) return false;
+        if (branch && row.Branch !== branch) return false;
+        return true;
+      });
+    }
+
+    function getPreviousYearData() {
+      const month = document.getElementById('filterMonth').value;
+      const year = document.getElementById('filterYear').value;
+      const branch = document.getElementById('filterBranch').value;
+      
+      const prevYear = year ? parseInt(year) - 1 : new Date().getFullYear() - 1;
+      
+      return rawData.filter(row => {
+        if (month && row.Month != month) return false;
+        if (year && row.Year != prevYear) return false;
+        if (branch && row.Branch !== branch) return false;
+        return true;
+      });
+    }
+
+    function updateDashboard() {
+      updateKPIs();
+      updateSummaryCards();
+      updateBranchCards();
+      updatePaymentAnalysis();
+      updateDeliveryPerformance();
+      enhanceChartInteractivity();
+    }
+
+    function updateKPIs() {
+      const totalSales = filteredData.reduce((sum, r) => sum + (r.Receipts || 0), 0);
+      const totalOrders = filteredData.reduce((sum, r) => sum + (r.Count_Receipts || 0), 0);
+      const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+      
+      // Calculate conversion rate (simplified for demo)
+      const conversionRate = 15.2; // Example value
+      
+      document.getElementById('totalSales').textContent = formatCurrency(totalSales);
+      document.getElementById('avgOrderValue').textContent = formatCurrency(avgOrderValue);
+      document.getElementById('totalOrders').textContent = totalOrders.toLocaleString();
+      document.getElementById('conversionRate').textContent = conversionRate.toFixed(1) + '%';
+    }
+
+    function updateKPIsWithComparison(comparisonData) {
+      if (comparisonData.length === 0) return;
+      
+      const currentSales = filteredData.reduce((sum, r) => sum + (r.Receipts || 0), 0);
+      const previousSales = comparisonData.reduce((sum, r) => sum + (r.Receipts || 0), 0);
+      
+      const salesChange = previousSales > 0 ? ((currentSales - previousSales) / previousSales * 100).toFixed(1) : 0;
+      const changeIcon = salesChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+      
+      document.getElementById('salesChange').innerHTML = `
+        <i class="fas ${changeIcon}"></i>
+        <span>${Math.abs(salesChange)}% from last period</span>
+      `;
+      
+      // Update other KPIs similarly
+      // ...
+    }
+
+    function updateSummaryCards() {
+      const totalReceipts = filteredData.reduce((sum, r) => sum + (r.Receipts || 0), 0);
+      const internalDelivery = filteredData.reduce((sum, r) => sum + (r['Delivery CARD'] || 0) + (r['Delivery Cash'] || 0), 0);
+      const online = filteredData.reduce((sum, r) => sum + (r['ONLINE CASH'] || 0) + (r['ONLINE CARD'] || 0), 0);
+      const platforms = filteredData.reduce((sum, r) => sum + 
+        (r.TALABAT || 0) + (r.TABNA || 0) + (r['Keeta CARD'] || 0) + 
+        (r['NOON CARD'] || 0) + (r['Master card'] || 0) + (r['Visa Card'] || 0) + 
+        (r['Careem CARD'] || 0) + (r['SMILES CARD'] || 0) + (r['DELIVERO CARD'] || 0), 0);
+      
+      const cardPayments = filteredData.reduce((sum, r) => sum + 
+        (r['Visa Card'] || 0) + (r['Master card'] || 0) + (r['NOON CARD'] || 0) + 
+        (r['Careem CARD'] || 0) + (r['SMILES CARD'] || 0) + (r['DELIVERO CARD'] || 0) + 
+        (r['ONLINE CARD'] || 0) + (r['Delivery CARD'] || 0) + (r['Keeta CARD'] || 0), 0);
+      const cashPayments = filteredData.reduce((sum, r) => sum + (r.Cash || 0) + (r['Delivery Cash'] || 0) + (r['ONLINE CASH'] || 0), 0);
+
+      const cardPct = totalReceipts > 0 ? (cardPayments / totalReceipts * 100).toFixed(1) : 0;
+      const cashPct = totalReceipts > 0 ? (cashPayments / totalReceipts * 100).toFixed(1) : 0;
+
+      document.getElementById('totalReceipts').textContent = formatCurrency(totalReceipts);
+      document.getElementById('totalDelivery').textContent = formatCurrency(internalDelivery);
+      document.getElementById('totalOnline').textContent = formatCurrency(online);
+      document.getElementById('totalPlatforms').textContent = formatCurrency(platforms);
+      document.getElementById('cardPercentage').textContent = cardPct + '%';
+      document.getElementById('cashPercentage').textContent = cashPct + '%';
+    }
+
+    function updateBranchCards() {
+      const branches = [...new Set(filteredData.map(r => r.Branch))];
+      const branchCardsContainer = document.getElementById('branchCards');
+      branchCardsContainer.innerHTML = '';
+
+      branches.forEach(branch => {
+        const branchData = filteredData.filter(r => r.Branch === branch);
+        const branchSales = branchData.reduce((sum, r) => sum + (r.Receipts || 0), 0);
+        const branchOrders = branchData.reduce((sum, r) => sum + (r.Count_Receipts || 0), 0);
+        const branchAvgOrder = branchOrders > 0 ? branchSales / branchOrders : 0;
+
+        const branchCard = document.createElement('div');
+        branchCard.className = 'branch-card';
+        branchCard.innerHTML = `
+          <div class="branch-name">
+            <i class="fas fa-store"></i>
+            ${branch.replace('Crispy Chicken', '').trim() || 'Main'}
+          </div>
+          <div class="branch-stats">
+            <div class="branch-stat">
+              <div class="branch-stat-label">Sales</div>
+              <div class="branch-stat-value">${formatCurrency(branchSales)}</div>
+            </div>
+            <div class="branch-stat">
+              <div class="branch-stat-label">Orders</div>
+              <div class="branch-stat-value">${branchOrders.toLocaleString()}</div>
+            </div>
+            <div class="branch-stat">
+              <div class="branch-stat-label">Avg. Order</div>
+              <div class="branch-stat-value">${formatCurrency(branchAvgOrder)}</div>
+            </div>
+            <div class="branch-stat">
+              <div class="branch-stat-label">Growth</div>
+              <div class="branch-stat-value" style="color: #2a9d8f;">+12.5%</div>
+            </div>
+          </div>
+        `;
+        branchCardsContainer.appendChild(branchCard);
+      });
+    }
+
+    function updatePaymentAnalysis() {
+      updateVisaMaster();
+      updateCashCard();
+      updatePlatformPerformance();
+      updatePaymentTrends();
+    }
+
+    function updateVisaMaster() {
+      const visaTotal = filteredData.reduce((sum, r) => sum + (r['Visa Card'] || 0), 0);
+      const masterTotal = filteredData.reduce((sum, r) => sum + (r['Master card'] || 0), 0);
+      const visaCount = filteredData.reduce((sum, r) => sum + (r.Count_Visa || 0), 0);
+      const masterCount = filteredData.reduce((sum, r) => sum + (r.Count_Master || 0), 0);
+      const total = visaTotal + masterTotal;
+
+      const visaAvg = visaCount > 0 ? visaTotal / visaCount : 0;
+      const masterAvg = masterCount > 0 ? masterTotal / masterCount : 0;
+      const visaShare = total > 0 ? (visaTotal / total * 100).toFixed(1) : 0;
+      const masterShare = total > 0 ? (masterTotal / total * 100).toFixed(1) : 0;
+
+      // Chart
+      if (charts.visaMaster) charts.visaMaster.destroy();
+      charts.visaMaster = new Chart(document.getElementById('visaMasterChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Visa', 'Mastercard'],
+          datasets: [{
+            label: 'Total Amount (AED)',
+            data: [visaTotal, masterTotal],
+            backgroundColor: ['#4CAF50', '#2196F3'],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => formatCurrency(ctx.parsed.y) } }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { callback: value => 'AED ' + abbreviateNumber(value) } }
+          }
+        }
+      });
+
+      // Legend
+      const legend = document.getElementById('visaMasterLegend');
+      legend.innerHTML = `
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #4CAF50;"></div>
+          <span>Visa: ${formatCurrency(visaTotal)} (${visaShare}%)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #2196F3;"></div>
+          <span>Mastercard: ${formatCurrency(masterTotal)} (${masterShare}%)</span>
+        </div>
+      `;
+
+      // Table
+      const tbody = document.querySelector('#visaMasterTable tbody');
+      tbody.innerHTML = `
+        <tr><td>Visa</td><td>${formatCurrency(visaTotal)}</td><td>${visaCount}</td><td>${formatCurrency(visaAvg)}</td><td>${visaShare}%</td></tr>
+        <tr><td>Mastercard</td><td>${formatCurrency(masterTotal)}</td><td>${masterCount}</td><td>${formatCurrency(masterAvg)}</td><td>${masterShare}%</td></tr>
+      `;
+    }
+
+    function updateCashCard() {
+      const cardTotal = filteredData.reduce((sum, r) => sum + 
+        (r['Visa Card'] || 0) + (r['Master card'] || 0) + (r['NOON CARD'] || 0) + 
+        (r['Careem CARD'] || 0) + (r['SMILES CARD'] || 0) + (r['DELIVERO CARD'] || 0) + 
+        (r['ONLINE CARD'] || 0) + (r['Delivery CARD'] || 0) + (r['Keeta CARD'] || 0), 0);
+      const cashTotal = filteredData.reduce((sum, r) => sum + (r.Cash || 0) + (r['Delivery Cash'] || 0) + (r['ONLINE CASH'] || 0), 0);
+      const total = cardTotal + cashTotal;
+
+      const cardCount = filteredData.reduce((sum, r) => sum + 
+        (r.Count_Visa || 0) + (r.Count_Master || 0) + (r.Count_NOON || 0) + 
+        (r.Count_Careem || 0) + (r.Count_SMILES || 0) + (r.Count_DELIVERO || 0) + 
+        (r.Count_ONLINE_Card || 0) + (r.Count_DeliveryCard || 0) + (r.Count_Keeta || 0), 0);
+      const cashCount = filteredData.reduce((sum, r) => sum + (r.Count_Cash || 0) + (r.Count_DeliveryCash || 0) + (r.Count_ONLINE_Cash || 0), 0);
+
+      // Chart
+      if (charts.cashCard) charts.cashCard.destroy();
+      charts.cashCard = new Chart(document.getElementById('cashCardChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Card Payments', 'Cash Payments'],
+          datasets: [{
+            data: [cardTotal, cashTotal],
+            backgroundColor: ['#FF9800', '#4CAF50'],
+            borderWidth: 2,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom' },
+            tooltip: { callbacks: { label: ctx => `${ctx.label}: ${formatCurrency(ctx.parsed)}` } }
+          }
+        }
+      });
+
+      // Legend
+      const legend = document.getElementById('cashCardLegend');
+      legend.innerHTML = `
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #FF9800;"></div>
+          <span>Card: ${formatCurrency(cardTotal)} (${total > 0 ? (cardTotal / total * 100).toFixed(1) : 0}%)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #4CAF50;"></div>
+          <span>Cash: ${formatCurrency(cashTotal)} (${total > 0 ? (cashTotal / total * 100).toFixed(1) : 0}%)</span>
+        </div>
+      `;
+
+      // Table
+      const tbody = document.querySelector('#cashCardTable tbody');
+      tbody.innerHTML = `
+        <tr><td>Card</td><td>${formatCurrency(cardTotal)}</td><td>${cardCount}</td><td>${total > 0 ? (cardTotal / total * 100).toFixed(1) : 0}%</td></tr>
+        <tr><td>Cash</td><td>${formatCurrency(cashTotal)}</td><td>${cashCount}</td><td>${total > 0 ? (cashTotal / total * 100).toFixed(1) : 0}%</td></tr>
+      `;
+    }
+
+    function updatePlatformPerformance() {
+      const platforms = [
+        { name: 'TALABAT', field: 'TALABAT', count: 'Count_TALABAT' },
+        { name: 'NOON', field: 'NOON CARD', count: 'Count_NOON' },
+        { name: 'Careem', field: 'Careem CARD', count: 'Count_Careem' },
+        { name: 'Smiles', field: 'SMILES CARD', count: 'Count_SMILES' },
+        { name: 'Deliveroo', field: 'DELIVERO CARD', count: 'Count_DELIVERO' },
+        { name: 'Keeta', field: 'Keeta CARD', count: 'Count_Keeta' }
+      ];
+
+      const data = platforms.map(p => ({
+        name: p.name,
+        total: filteredData.reduce((sum, r) => sum + (r[p.field] || 0), 0),
+        count: filteredData.reduce((sum, r) => sum + (r[p.count] || 0), 0)
+      })).filter(d => d.total > 0);
+
+      const total = data.reduce((sum, d) => sum + d.total, 0);
+      data.forEach(d => {
+        d.avg = d.count > 0 ? d.total / d.count : 0;
+        d.share = total > 0 ? (d.total / total * 100).toFixed(1) : 0;
+      });
+
+      // Chart
+      if (charts.platformPie) charts.platformPie.destroy();
+      charts.platformPie = new Chart(document.getElementById('platformPieChart'), {
+        type: 'pie',
+        data: {
+          labels: data.map(d => d.name),
+          datasets: [{
+            data: data.map(d => d.total),
+            backgroundColor: ['#e63946', '#2a9d8f', '#f4a261', '#e9c46a', '#457b9d', '#1d3557'],
+            borderWidth: 2,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'right' },
+            tooltip: { callbacks: { label: ctx => `${ctx.label}: ${formatCurrency(ctx.parsed)}` } }
+          }
+        }
+      });
+
+      // Legend
+      const legend = document.getElementById('platformLegend');
+      legend.innerHTML = data.map(d => `
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: ${getColorForPlatform(d.name)};"></div>
+          <span>${d.name}: ${formatCurrency(d.total)} (${d.share}%)</span>
+        </div>
+      `).join('');
+
+      // Table
+      const tbody = document.querySelector('#platformTable tbody');
+      tbody.innerHTML = data.map(d => `
+        <tr>
+          <td>${d.name}</td>
+          <td>${formatCurrency(d.total)}</td>
+          <td>${d.count}</td>
+          <td>${formatCurrency(d.avg)}</td>
+          <td>${d.share}%</td>
+        </tr>
+      `).join('');
+    }
+
+    function getColorForPlatform(name) {
+      const colors = {
+        'TALABAT': '#e63946',
+        'NOON': '#2a9d8f',
+        'Careem': '#f4a261',
+        'Smiles': '#e9c46a',
+        'Deliveroo': '#457b9d',
+        'Keeta': '#1d3557'
+      };
+      return colors[name] || '#888';
+    }
+
+    function updatePaymentTrends() {
+      const monthlyData = {};
+      filteredData.forEach(r => {
+        const key = `${r.Year}-${String(r.Month).padStart(2, '0')}`;
+        if (!monthlyData[key]) monthlyData[key] = { sales: 0, card: 0, cash: 0 };
+        monthlyData[key].sales += r.Receipts || 0;
+        monthlyData[key].card += (r['Visa Card'] || 0) + (r['Master card'] || 0) + 
+                                  (r['NOON CARD'] || 0) + (r['Careem CARD'] || 0) + 
+                                  (r['SMILES CARD'] || 0) + (r['DELIVERO CARD'] || 0) + 
+                                  (r['ONLINE CARD'] || 0) + (r['Delivery CARD'] || 0) + 
+                                  (r['Keeta CARD'] || 0);
+        monthlyData[key].cash += (r.Cash || 0) + (r['Delivery Cash'] || 0) + (r['ONLINE CASH'] || 0);
+      });
+
+      const sorted = Object.keys(monthlyData).sort();
+      const labels = sorted.map(k => {
+        const [y, m] = k.split('-');
+        return new Date(y, m-1, 1).toLocaleString('default', { month: 'short', year: 'numeric' });
+      });
+      const sales = sorted.map(k => monthlyData[k].sales);
+      const card = sorted.map(k => monthlyData[k].card);
+      const cash = sorted.map(k => monthlyData[k].cash);
+
+      // Add forecast
+      const forecastData = addTrendForecast(sales);
+      const forecastLabels = [...labels, 'Forecast'];
+      const salesWithForecast = [...sales, forecastData];
+
+      if (charts.paymentTrends) charts.paymentTrends.destroy();
+      charts.paymentTrends = new Chart(document.getElementById('paymentTrendsChart'), {
+        type: 'line',
+        data: {
+          labels: forecastLabels,
+          datasets: [
+            { 
+              label: 'Total Sales', 
+              data: salesWithForecast, 
+              borderColor: '#1d3557', 
+              backgroundColor: 'rgba(29, 53, 87, 0.1)', 
+              tension: 0.3,
+              borderDash: sales.length === salesWithForecast.length ? [] : [5, 5]
+            },
+            { label: 'Card Payments', data: card, borderColor: '#FF9800', backgroundColor: 'rgba(255, 152, 0, 0.1)', tension: 0.3 },
+            { label: 'Cash Payments', data: cash, borderColor: '#4CAF50', backgroundColor: 'rgba(76, 175, 80, 0.1)', tension: 0.3 }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatCurrency(ctx.parsed.y)}` } }
+          },
+          scales: {
+            y: { ticks: { callback: value => 'AED ' + abbreviateNumber(value) } }
+          }
+        }
+      });
+    }
+
+    function addTrendForecast(data) {
+      if (data.length < 3) return 0;
+      
+      // Simple linear regression for forecasting
+      const n = data.length;
+      let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+      
+      for (let i = 0; i < n; i++) {
+        sumX += i;
+        sumY += data[i];
+        sumXY += i * data[i];
+        sumX2 += i * i;
+      }
+      
+      const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+      const intercept = (sumY - slope * sumX) / n;
+      
+      // Predict next month
+      return Math.max(0, slope * n + intercept);
+    }
+
+    function updateDeliveryPerformance() {
+      updateBranchComparison();
+      updateDeliveryTypes();
+      updateMonthlyTrends();
+      updateInternalTrends();
+      updateDeliveryEfficiency();
+    }
+
+    function updateBranchComparison() {
+      const branches = [...new Set(filteredData.map(r => r.Branch))];
+      const internalData = branches.map(b => {
+        const branchData = filteredData.filter(r => r.Branch === b);
+        return branchData.reduce((sum, r) => sum + (r['Delivery CARD'] || 0) + (r['Delivery Cash'] || 0), 0);
+      });
+      const platformData = branches.map(b => {
+        const branchData = filteredData.filter(r => r.Branch === b);
+        return branchData.reduce((sum, r) => sum + 
+          (r.TALABAT || 0) + (r['NOON CARD'] || 0) + (r['Careem CARD'] || 0) + 
+          (r['SMILES CARD'] || 0) + (r['DELIVERO CARD'] || 0) + (r['Keeta CARD'] || 0), 0);
+      });
+
+      if (charts.branchComparison) charts.branchComparison.destroy();
+      charts.branchComparison = new Chart(document.getElementById('branchComparisonChart'), {
+        type: 'bar',
+        data: {
+          labels: branches.map(b => b.replace('Crispy Chicken', '').trim() || 'Main'),
+          datasets: [
+            {
+              label: 'Internal Delivery',
+              data: internalData,
+              backgroundColor: '#2a9d8f'
+            },
+            {
+              label: 'Third-Party Platforms',
+              data: platformData,
+              backgroundColor: '#e63946'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatCurrency(ctx.parsed.y)}` } }
+          },
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, ticks: { callback: value => 'AED ' + abbreviateNumber(value) } }
+          }
+        }
+      });
+    }
+
+    function updateDeliveryTypes() {
+      const internal = filteredData.reduce((sum, r) => sum + (r['Delivery CARD'] || 0) + (r['Delivery Cash'] || 0), 0);
+      const platforms = filteredData.reduce((sum, r) => sum + 
+        (r.TALABAT || 0) + (r['NOON CARD'] || 0) + (r['Careem CARD'] || 0) + 
+        (r['SMILES CARD'] || 0) + (r['DELIVERO CARD'] || 0) + (r['Keeta CARD'] || 0), 0);
+      const total = internal + platforms;
+
+      if (charts.deliveryTypes) charts.deliveryTypes.destroy();
+      charts.deliveryTypes = new Chart(document.getElementById('deliveryTypesChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Internal Delivery', 'Third-Party Platforms'],
+          datasets: [{
+            data: [internal, platforms],
+            backgroundColor: ['#2a9d8f', '#e63946'],
+            borderWidth: 2,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom' },
+            tooltip: { callbacks: { label: ctx => `${ctx.label}: ${formatCurrency(ctx.parsed)}` } }
+          }
+        }
+      });
+
+      // Legend
+      const legend = document.getElementById('deliveryLegend');
+      legend.innerHTML = `
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #2a9d8f;"></div>
+          <span>Internal: ${formatCurrency(internal)} (${total > 0 ? (internal / total * 100).toFixed(1) : 0}%)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #e63946;"></div>
+          <span>Third-Party: ${formatCurrency(platforms)} (${total > 0 ? (platforms / total * 100).toFixed(1) : 0}%)</span>
+        </div>
+      `;
+
+      const tbody = document.querySelector('#deliveryTypesTable tbody');
+      tbody.innerHTML = `
+        <tr><td>Internal</td><td>${formatCurrency(internal)}</td><td>${total > 0 ? (internal / total * 100).toFixed(1) : 0}%</td><td>${filteredData.reduce((sum, r) => sum + (r.Count_DeliveryCard || 0) + (r.Count_DeliveryCash || 0), 0)}</td></tr>
+        <tr><td>Third-Party</td><td>${formatCurrency(platforms)}</td><td>${total > 0 ? (platforms / total * 100).toFixed(1) : 0}%</td><td>${filteredData.reduce((sum, r) => sum + (r.Count_TALABAT || 0) + (r.Count_NOON || 0) + (r.Count_Careem || 0) + (r.Count_SMILES || 0) + (r.Count_DELIVERO || 0) + (r.Count_Keeta || 0), 0)}</td></tr>
+      `;
+    }
+
+    function updateMonthlyTrends() {
+      const monthlyData = {};
+      filteredData.forEach(r => {
+        const key = `${r.Year}-${String(r.Month).padStart(2, '0')}`;
+        if (!monthlyData[key]) monthlyData[key] = { sales: 0, internal: 0, platforms: 0 };
+        monthlyData[key].sales += r.Receipts || 0;
+        monthlyData[key].internal += (r['Delivery CARD'] || 0) + (r['Delivery Cash'] || 0);
+        monthlyData[key].platforms += (r.TALABAT || 0) + (r['NOON CARD'] || 0) + (r['Careem CARD'] || 0) + 
+                                      (r['SMILES CARD'] || 0) + (r['DELIVERO CARD'] || 0) + (r['Keeta CARD'] || 0);
+      });
+
+      const sorted = Object.keys(monthlyData).sort();
+      const labels = sorted.map(k => {
+        const [y, m] = k.split('-');
+        return new Date(y, m-1, 1).toLocaleString('default', { month: 'short', year: 'numeric' });
+      });
+      const sales = sorted.map(k => monthlyData[k].sales);
+      const internal = sorted.map(k => monthlyData[k].internal);
+      const platforms = sorted.map(k => monthlyData[k].platforms);
+
+      if (charts.monthlyTrends) charts.monthlyTrends.destroy();
+      charts.monthlyTrends = new Chart(document.getElementById('monthlyTrendsChart'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Total Sales', data: sales, borderColor: '#1d3557', backgroundColor: 'rgba(29, 53, 87, 0.1)', tension: 0.3 },
+            { label: 'Internal Delivery', data: internal, borderColor: '#2a9d8f', backgroundColor: 'rgba(42, 157, 143, 0.1)', tension: 0.3 },
+            { label: 'Third-Party', data: platforms, borderColor: '#e63946', backgroundColor: 'rgba(230, 57, 70, 0.1)', tension: 0.3 }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatCurrency(ctx.parsed.y)}` } }
+          },
+          scales: {
+            y: { ticks: { callback: value => 'AED ' + abbreviateNumber(value) } }
+          }
+        }
+      });
+    }
+
+    function updateInternalTrends() {
+      const branches = [...new Set(filteredData.map(r => r.Branch))];
+      const monthlyData = {};
+
+      filteredData.forEach(r => {
+        const key = `${r.Year}-${String(r.Month).padStart(2, '0')}`;
+        if (!monthlyData[key]) monthlyData[key] = {};
+        if (!monthlyData[key][r.Branch]) monthlyData[key][r.Branch] = 0;
+        monthlyData[key][r.Branch] += (r['Delivery CARD'] || 0) + (r['Delivery Cash'] || 0);
+      });
+
+      const sorted = Object.keys(monthlyData).sort();
+      const labels = sorted.map(k => {
+        const [y, m] = k.split('-');
+        return new Date(y, m-1, 1).toLocaleString('default', { month: 'short', year: 'numeric' });
+      });
+
+      const datasets = branches.map((branch, i) => {
+        const color = `hsl(${i * 360 / branches.length}, 70%, 50%)`;
+        return {
+          label: branch.replace('Crispy Chicken', '').trim() || 'Main',
+          data: sorted.map(k => monthlyData[k][branch] || 0),
+          borderColor: color,
+          backgroundColor: color + '20',
+          tension: 0.3,
+          fill: false
+        };
+      });
+
+      if (charts.internalTrends) charts.internalTrends.destroy();
+      charts.internalTrends = new Chart(document.getElementById('internalTrendsChart'), {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'right', maxWidth: 200 },
+            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatCurrency(ctx.parsed.y)}` } }
+          },
+          scales: {
+            y: { ticks: { callback: value => 'AED ' + abbreviateNumber(value) } }
+          }
+        }
+      });
+    }
+
+    function updateDeliveryEfficiency() {
+      const branches = [...new Set(filteredData.map(r => r.Branch))];
+      const tbody = document.querySelector('#deliveryEfficiencyTable tbody');
+      tbody.innerHTML = '';
+
+      branches.forEach(branch => {
+        const branchData = filteredData.filter(r => r.Branch === branch);
+        const deliveryOrders = branchData.reduce((sum, r) => sum + (r.Count_DeliveryCard || 0) + (r.Count_DeliveryCash || 0), 0);
+        const deliveryRevenue = branchData.reduce((sum, r) => sum + (r['Delivery CARD'] || 0) + (r['Delivery Cash'] || 0), 0);
+        const avgOrderValue = deliveryOrders > 0 ? deliveryRevenue / deliveryOrders : 0;
+        
+        // Calculate efficiency score (simplified)
+        const efficiencyScore = deliveryOrders > 0 ? (deliveryRevenue / (deliveryOrders * 100) * 100).toFixed(1) : 0;
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${branch.replace('Crispy Chicken', '').trim() || 'Main'}</td>
+            <td>${deliveryOrders.toLocaleString()}</td>
+            <td>${formatCurrency(deliveryRevenue)}</td>
+            <td>${formatCurrency(avgOrderValue)}</td>
+            <td>${efficiencyScore}%</td>
+          </tr>
+        `;
+      });
+
+      // Chart
+      if (charts.deliveryEfficiency) charts.deliveryEfficiency.destroy();
+      charts.deliveryEfficiency = new Chart(document.getElementById('deliveryEfficiencyChart'), {
+        type: 'radar',
+        data: {
+          labels: branches.map(b => b.replace('Crispy Chicken', '').trim() || 'Main'),
+          datasets: [{
+            label: 'Delivery Efficiency Score',
+            data: branches.map(b => {
+              const branchData = filteredData.filter(r => r.Branch === b);
+              const deliveryOrders = branchData.reduce((sum, r) => sum + (r.Count_DeliveryCard || 0) + (r.Count_DeliveryCash || 0), 0);
+              const deliveryRevenue = branchData.reduce((sum, r) => sum + (r['Delivery CARD'] || 0) + (r['Delivery Cash'] || 0), 0);
+              return deliveryOrders > 0 ? (deliveryRevenue / (deliveryOrders * 100) * 100).toFixed(1) : 0;
+            }),
+            backgroundColor: 'rgba(42, 157, 143, 0.2)',
+            borderColor: '#2a9d8f',
+            pointBackgroundColor: '#2a9d8f',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: '#2a9d8f'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => `Efficiency: ${ctx.parsed.r}%` } }
+          },
+          scales: {
+            r: {
+              angleLines: { display: true },
+              suggestedMin: 0,
+              suggestedMax: 100
+            }
+          }
+        }
+      });
+    }
+
+    function enhanceChartInteractivity() {
+      // Add click events to all charts
+      Object.values(charts).forEach(chart => {
+        if (chart) {
+          chart.options.onClick = function(event, elements) {
+            if (elements.length > 0) {
+              const element = elements[0];
+              const datasetLabel = chart.data.datasets[element.datasetIndex].label;
+              const label = chart.data.labels[element.index];
+              const value = chart.data.datasets[element.datasetIndex].data[element.index];
+              
+              // Show detail modal
+              showDetailModal(datasetLabel, label, value);
+            }
+          };
+        }
+      });
+    }
+
+    function setupModal() {
+      const modal = document.getElementById('detailModal');
+      const span = document.getElementsByClassName('close')[0];
+      
+      span.onclick = function() {
+        modal.style.display = 'none';
+      };
+      
+      window.onclick = function(event) {
+        if (event.target == modal) {
+          modal.style.display = 'none';
+        }
+      };
+    }
+
+    function showDetailModal(category, label, value) {
+      const modal = document.getElementById('detailModal');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalBody = document.getElementById('modalBody');
+      
+      modalTitle.textContent = `${category} - ${label}`;
+      
+      // Get detailed data for this category and label
+      const detailData = getDetailData(category, label);
+      
+      modalBody.innerHTML = `
+        <div class="detail-summary">
+          <h3>Summary</h3>
+          <p><strong>Total:</strong> ${formatCurrency(value)}</p>
+          <p><strong>Transactions:</strong> ${detailData.transactions || 'N/A'}</p>
+          <p><strong>Average:</strong> ${formatCurrency(detailData.average || 0)}</p>
+        </div>
+        <div class="detail-trend">
+          <h3>Trend</h3>
+          <p><strong>Change from last period:</strong> ${detailData.change || 'N/A'}</p>
+          <p><strong>Year to date:</strong> ${formatCurrency(detailData.ytd || 0)}</p>
+        </div>
+      `;
+      
+      modal.style.display = 'block';
+    }
+
+    function getDetailData(category, label) {
+      // This would normally fetch detailed data based on category and label
+      // For demo purposes, return mock data
+      return {
+        transactions: Math.floor(Math.random() * 1000) + 100,
+        average: Math.random() * 100 + 50,
+        change: (Math.random() * 20 - 10).toFixed(1) + '%',
+        ytd: Math.random() * 100000 + 10000
+      };
+    }
+
+    function detectAnomalies() {
+      const anomalies = [];
+      
+      // Detect sales anomalies
+      const salesData = getSalesData();
+      const salesMean = calculateMean(salesData);
+      const salesStdDev = calculateStandardDeviation(salesData, salesMean);
+      
+      salesData.forEach((value, index) => {
+        const zScore = Math.abs((value - salesMean) / salesStdDev);
+        if (zScore > 2) { // More than 2 standard deviations
+          anomalies.push({
+            type: 'Sales Anomaly',
+            month: getMonthForIndex(index),
+            value: value,
+            expected: salesMean
+          });
+        }
+      });
+      
+      // Detect payment method anomalies
+      const paymentData = getPaymentData();
+      // Similar anomaly detection logic...
+      
+      // Show anomaly report
+      if (anomalies.length > 0) {
+        showAnomalyReport(anomalies);
+      } else {
+        showError('No anomalies detected in the current data.');
+      }
+    }
+
+    function getSalesData() {
+      const monthlyData = {};
+      filteredData.forEach(r => {
+        const key = `${r.Year}-${String(r.Month).padStart(2, '0')}`;
+        if (!monthlyData[key]) monthlyData[key] = 0;
+        monthlyData[key] += r.Receipts || 0;
+      });
+      
+      return Object.values(monthlyData);
+    }
+
+    function getPaymentData() {
+      // Return payment method data for anomaly detection
+      return [];
+    }
+
+    function calculateMean(data) {
+      return data.reduce((sum, value) => sum + value, 0) / data.length;
+    }
+
+    function calculateStandardDeviation(data, mean) {
+      const squaredDiffs = data.map(value => Math.pow(value - mean, 2));
+      const avgSquaredDiff = calculateMean(squaredDiffs);
+      return Math.sqrt(avgSquaredDiff);
+    }
+
+    function getMonthForIndex(index) {
+      // Convert index to month name (simplified)
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return months[index % 12];
+    }
+
+    function showAnomalyReport(anomalies) {
+      // Remove existing anomaly report if any
+      const existingReport = document.querySelector('.anomaly-report');
+      if (existingReport) {
+        existingReport.remove();
+      }
+      
+      const reportContainer = document.createElement('div');
+      reportContainer.className = 'anomaly-report';
+      
+      reportContainer.innerHTML = `
+        <h3><i class="fas fa-exclamation-triangle"></i> Data Anomalies Detected</h3>
+        <ul>
+          ${anomalies.map(anomaly => `
+            <li>
+              <strong>${anomaly.type}</strong> in ${anomaly.month}: 
+              Actual ${formatCurrency(anomaly.value)} vs Expected ${formatCurrency(anomaly.expected)}
+            </li>
+          `).join('')}
+        </ul>
+      `;
+      
+      // Insert after the filters section
+      const filtersSection = document.querySelector('.filters');
+      filtersSection.parentNode.insertBefore(reportContainer, filtersSection.nextSibling);
+    }
+
+    function updatePagination() {
+      const totalPages = Math.ceil(filteredData.length / pageSize);
+      const paginationContainer = document.getElementById('paginationContainer');
+      paginationContainer.innerHTML = '';
+      
+      if (totalPages <= 1) return;
+      
+      // Add previous button
+      const prevButton = document.createElement('button');
+      prevButton.textContent = 'Previous';
+      prevButton.disabled = currentPage === 1;
+      prevButton.onclick = () => {
+        if (currentPage > 1) {
+          currentPage--;
+          updateDashboard();
+        }
+      };
+      paginationContainer.appendChild(prevButton);
+      
+      // Add page buttons
+      for (let i = 1; i <= totalPages; i++) {
+        // Show only a few page buttons for large datasets
+        if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+          const pageButton = document.createElement('button');
+          pageButton.textContent = i;
+          pageButton.className = i === currentPage ? 'active' : '';
+          pageButton.onclick = () => {
+            currentPage = i;
+            updateDashboard();
+          };
+          paginationContainer.appendChild(pageButton);
+        } else if (i === currentPage - 3 || i === currentPage + 3) {
+          const dots = document.createElement('span');
+          dots.textContent = '...';
+          paginationContainer.appendChild(dots);
+        }
+      }
+      
+      // Add next button
+      const nextButton = document.createElement('button');
+      nextButton.textContent = 'Next';
+      nextButton.disabled = currentPage === totalPages;
+      nextButton.onclick = () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          updateDashboard();
+        }
+      };
+      paginationContainer.appendChild(nextButton);
+    }
+
+    // Utility functions
+    function formatCurrency(value) {
+      return new Intl.NumberFormat('en-AE', { style: 'currency', currency: 'AED', minimumFractionDigits: 0 }).format(value);
+    }
+
+    function abbreviateNumber(value) {
+      if (value >= 1e6) return (value / 1e6).toFixed(1) + 'M';
+      if (value >= 1e3) return (value / 1e3).toFixed(1) + 'K';
+      return value.toFixed(0);
+    }
+
+    function showLoading(msg) {
+      document.getElementById('loadingMessage').innerHTML = `<i class="fas fa-spinner fa-spin"></i><span>${msg}</span>`;
+      document.getElementById('loadingMessage').style.display = 'flex';
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingMessage').style.display = 'none';
+    }
+
+    function showError(msg) {
+      document.getElementById('errorMessage').innerHTML = `<i class="fas fa-exclamation-circle"></i><span>${msg}</span>`;
+      document.getElementById('errorMessage').style.display = 'flex';
+      setTimeout(() => document.getElementById('errorMessage').style.display = 'none', 5000);
+    }
+
+    function downloadTemplate() {
+      const csv = sampleData.map(row => row.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Sales_Data_Template.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportPDF() {
+      showLoading('Generating PDF report...');
+      
+      setTimeout(() => {
+        try {
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+          
+          // Add title
+          doc.setFontSize(18);
+          doc.text('Crispy Chicken Sales Report', 14, 22);
+          
+          // Add date range
+          doc.setFontSize(12);
+          const dateRange = getDateRangeText();
+          doc.text(`Period: ${dateRange}`, 14, 32);
+          
+          // Add KPI summary
+          const kpiData = getKPISummary();
+          let yPosition = 45;
+          
+          doc.setFontSize(14);
+          doc.text('Key Performance Indicators', 14, yPosition);
+          yPosition += 10;
+          
+          doc.setFontSize(11);
+          kpiData.forEach(kpi => {
+            doc.text(`${kpi.label}: ${kpi.value}`, 20, yPosition);
+            yPosition += 7;
+          });
+          
+          // Add charts
+          const charts = ['visaMasterChart', 'cashCardChart', 'platformPieChart'];
+          charts.forEach((chartId, index) => {
+            const canvas = document.getElementById(chartId);
+            const imgData = canvas.toDataURL('image/png');
+            
+            yPosition += 10;
+            doc.addImage(imgData, 'PNG', 15, yPosition, 180, 100);
+            
+            // Add new page if needed
+            if (index < charts.length - 1) {
+              doc.addPage();
+              yPosition = 20;
+            }
+          });
+          
+          // Save PDF
+          doc.save('Crispy_Chicken_Sales_Report.pdf');
+          hideLoading();
+        } catch (err) {
+          showError('Failed to generate PDF: ' + err.message);
+          hideLoading();
+        }
+      }, 1000);
+    }
+
+    function getDateRangeText() {
+      const from = document.getElementById('filterDateFrom').value;
+      const to = document.getElementById('filterDateTo').value;
+      
+      if (from && to) {
+        return `${from} to ${to}`;
+      } else if (from) {
+        return `From ${from}`;
+      } else if (to) {
+        return `Until ${to}`;
+      } else {
+        return 'All time';
+      }
+    }
+
+    function getKPISummary() {
+      const totalSales = filteredData.reduce((sum, r) => sum + (r.Receipts || 0), 0);
+      const totalOrders = filteredData.reduce((sum, r) => sum + (r.Count_Receipts || 0), 0);
+      const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+      
+      return [
+        { label: 'Total Sales', value: formatCurrency(totalSales) },
+        { label: 'Total Orders', value: totalOrders.toLocaleString() },
+        { label: 'Average Order Value', value: formatCurrency(avgOrderValue) }
+      ];
+    }
+
+    function exportCSV() {
+      const csv = filteredData.map(row => {
+        return Object.values(row).join(',');
+      }).join('\n');
+      
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Sales_Data_Report.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportCharts() {
+      showLoading('Exporting charts...');
+      
+      setTimeout(() => {
+        try {
+          // Create a zip file with all charts (would need a library like JSZip)
+          // For now, just download the first chart as an example
+          const canvas = document.getElementById('visaMasterChart');
+          const url = canvas.toDataURL('image/png');
+          
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'Visa_Mastercard_Chart.png';
+          a.click();
+          
+          hideLoading();
+        } catch (err) {
+          showError('Failed to export charts: ' + err.message);
+          hideLoading();
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
